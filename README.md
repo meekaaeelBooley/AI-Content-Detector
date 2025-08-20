@@ -10,7 +10,7 @@ To test locally or change the model path, update the following line in `app.py`:
 
 ```python
 # Line 26 in app.py
-model_path = "C:\\Users\\Model"
+model_path = "C:\\Model"
 ```
 
 Replace this path with your local model directory path.
