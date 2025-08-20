@@ -4,7 +4,7 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
 class AIDetectionModel:
     def __init__(self, model_path):
-        """Initialize the AI detection model with the given path"""
+        # Initialize the AI detection model with the given path
         self.model_path = model_path
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
         self.model = AutoModelForSequenceClassification.from_pretrained(model_path)
@@ -15,10 +15,9 @@ class AIDetectionModel:
         self.model.eval()
     
     def predict(self, text):
-        """
-        Predict whether text is AI-generated or human-written
-        Returns a dictionary with probabilities and confidence
-        """
+        # Predict whether text is AI-generated or human-written
+        # Returns a dictionary with probabilities and confidence
+
         # Tokenize the input
         inputs = self.tokenizer(text, return_tensors="pt", truncation=True, padding=True, max_length=512)
         
@@ -34,7 +33,7 @@ class AIDetectionModel:
             probabilities = F.softmax(logits, dim=-1)
             
             # Extract individual probabilities
-            human_prob = probabilities[0][0].item()  # Class 0 (human)
+            human_prob = probabilities[0][0].item()   # Class 0 (human)
             ai_prob = probabilities[0][1].item()      # Class 1 (ai)
             
             # Calculate confidence score (probability of predicted class)
@@ -47,10 +46,7 @@ class AIDetectionModel:
         }
     
     def predict_with_confidence(self, text):
-        """
-        Predict with additional confidence level categorization
-        (This method maintains compatibility with the original implementation)
-        """
+        #Predict with additional confidence level categorization        
         result = self.predict(text)
         
         # Get the predicted class
@@ -82,7 +78,7 @@ class AIDetectionModel:
         }
     
     def batch_predict(self, texts):
-        """Predict for multiple texts"""
+        #Predict for multiple texts
         results = []
         for text in texts:
             result = self.predict(text)
@@ -92,7 +88,6 @@ class AIDetectionModel:
 
 # For backwards compatibility and standalone testing
 def create_model(model_path):
-    """Factory function to create model instance"""
     return AIDetectionModel(model_path)
 
 

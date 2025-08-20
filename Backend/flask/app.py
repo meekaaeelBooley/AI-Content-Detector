@@ -11,14 +11,14 @@ import docx
 import tempfile
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here')  # Change in production
+#app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here')  # Change in production
 CORS(app)
 
 # Configuration
 UPLOAD_FOLDER = tempfile.gettempdir()
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'docx'}
-MAX_FILE_SIZE = 16 * 1024 * 1024  # 16MB
-MAX_TEXT_LENGTH = 50000  # Increased for file uploads
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+MAX_TEXT_LENGTH = 20000  # Increased for file uploads
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
@@ -30,11 +30,11 @@ model_path = "C:\\Users\\mubas\\OneDrive\\Desktop\\CSC 3003S\\Capstone\\checkpoi
 model = AIDetectionModel(model_path)
 
 def allowed_file(filename):
-    """Check if file extension is allowed"""
+    #Check if file extension is allowed
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def extract_text_from_pdf(file_path):
-    """Extract text from PDF file"""
+    # Extract text from PDF file
     try:
         text = ""
         with open(file_path, 'rb') as file:
@@ -46,7 +46,7 @@ def extract_text_from_pdf(file_path):
         raise Exception(f"Error reading PDF: {str(e)}")
 
 def extract_text_from_docx(file_path):
-    """Extract text from DOCX file"""
+    # Extract text from DOCX file
     try:
         doc = docx.Document(file_path)
         text = ""
@@ -57,12 +57,11 @@ def extract_text_from_docx(file_path):
         raise Exception(f"Error reading DOCX: {str(e)}")
 
 def extract_text_from_txt(file_path):
-    """Extract text from TXT file"""
+    # Extract text from TXT file
     try:
         with open(file_path, 'r', encoding='utf-8') as file:
             return file.read().strip()
     except UnicodeDecodeError:
-        # Try with different encoding
         try:
             with open(file_path, 'r', encoding='latin-1') as file:
                 return file.read().strip()
@@ -72,7 +71,7 @@ def extract_text_from_txt(file_path):
         raise Exception(f"Error reading TXT file: {str(e)}")
 
 def process_uploaded_file(file):
-    """Process uploaded file and extract text"""
+    # Process uploaded file and extract text
     if not file or file.filename == '':
         raise ValueError("No file selected")
     
@@ -108,7 +107,7 @@ def process_uploaded_file(file):
         raise e
 
 def ensure_session(f):
-    """Decorator to ensure each request has a session ID"""
+    # Decorator to ensure each request has a session ID
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'session_id' not in session:
@@ -122,7 +121,7 @@ def ensure_session(f):
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
-    """Health check endpoint"""
+    # Health check endpoint
     return jsonify({
         'status': 'healthy',
         'timestamp': datetime.datetime.now().isoformat(),
@@ -133,7 +132,7 @@ def health_check():
 @app.route('/api/detect', methods=['POST'])
 @ensure_session
 def detect_ai():
-    """Main endpoint for AI detection - handles both text and file input"""
+    # Main endpoint for AI detection - handles both text and file input
     try:
         text = None
         filename = None
@@ -225,7 +224,7 @@ def detect_ai():
 @app.route('/api/batch-detect', methods=['POST'])
 @ensure_session
 def batch_detect():
-    """Endpoint for batch text analysis - supports multiple files or texts"""
+    # Endpoint for batch text analysis - supports multiple files or texts
     try:
         results = []
         
@@ -258,7 +257,7 @@ def batch_detect():
                         })
                         continue
                     
-                    # Simulate AI model prediction
+                    # AI model prediction
                     prediction = model.predict(text)
                     
                     analysis_id = str(uuid.uuid4())
@@ -386,7 +385,7 @@ def batch_detect():
 @app.route('/api/history', methods=['GET'])
 @ensure_session
 def get_history():
-    """Get analysis history for current session"""
+    # Get analysis history for current session
     try:
         session_id = session['session_id']
         analyses = session_data.get(session_id, {}).get('analyses', [])
@@ -410,7 +409,7 @@ def get_history():
 @app.route('/api/analysis/<analysis_id>', methods=['GET'])
 @ensure_session
 def get_analysis(analysis_id):
-    """Get specific analysis by ID"""
+    # Get specific analysis by ID
     try:
         session_id = session['session_id']
         analyses = session_data.get(session_id, {}).get('analyses', [])
@@ -436,7 +435,7 @@ def get_analysis(analysis_id):
 @app.route('/api/session', methods=['GET'])
 @ensure_session
 def get_session_info():
-    """Get current session information"""
+    # Get current session information
     try:
         session_id = session['session_id']
         session_info = session_data.get(session_id, {})
@@ -457,7 +456,7 @@ def get_session_info():
 @app.route('/api/clear-history', methods=['DELETE'])
 @ensure_session
 def clear_history():
-    """Clear analysis history for current session"""
+    # Clear analysis history for current session
     try:
         session_id = session['session_id']
         if session_id in session_data:
