@@ -260,8 +260,8 @@ Clear all analysis history for the current session.
 - **Text File** (.txt)
 
 ### Limitations
-- Maximum file size: 16MB
-- Maximum text length: 50,000 characters
+- Maximum file size: 10MB
+- Maximum text length: 5000 characters
 - Minimum text length: 10 characters
 
 ### Text Extraction
@@ -297,7 +297,7 @@ The API uses Flask sessions to track user activity:
 - Invalid endpoint
 
 **413 Payload Too Large**
-- File size exceeds 16MB limit
+- File size exceeds 10MB limit
 
 **500 Internal Server Error**
 - Model prediction failure
