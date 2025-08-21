@@ -366,11 +366,11 @@ The API uses the `AIDetectionModel` class from `model.py`. The model is loaded o
 
 ### Session Storage
 Currently uses in-memory storage. For production deployment, consider:
-- Redis for session storage
+- Redis for session storage (Need to learn)
 - Database for persistent analysis history
-- Proper session cleanup mechanisms
+- Proper session cleanup mechanisms (Need to implement)
 
 ### Security Considerations
-- Change the secret key in production
+- Change the secret key in production (Need to do)
 - Validate file types more strictly
-- Implement virus scanning for uploaded files
+- Implement virus scanning for uploaded files (Need to do)
