@@ -3,12 +3,12 @@ import torch.nn.functional as F
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
 class AIDetectionModel:
-    def __init__(self, model_path):
+    def __init__(self):
         # Initialize the AI detection model with the given path
-        self.model_path = model_path
-        self.tokenizer = AutoTokenizer.from_pretrained(model_path)
-        self.model = AutoModelForSequenceClassification.from_pretrained(model_path)
-        
+        self.model_path = "C:\\Users\\mubas\\OneDrive\\Desktop\\CSC 3003S\\Capstone\\checkpoint-4250"
+        self.tokenizer = AutoTokenizer.from_pretrained(self.model_path)
+        self.model = AutoModelForSequenceClassification.from_pretrained(self.model_path)
+
         # Set up device
         self.device = torch.device("cpu")
         self.model.to(self.device)
@@ -84,16 +84,13 @@ class AIDetectionModel:
 
 # For backwards compatibility and standalone testing
 def create_model(model_path):
-    return AIDetectionModel(model_path)
+    return AIDetectionModel()
 
 
 # Standalone testing code (only runs when script is executed directly)
-if __name__ == "__main__":
-    # Test model path - adjust as needed
-    model_path = "/content/drive/MyDrive/SecondModelData/checkpoint-4250"
-    
+if __name__ == "__main__":    
     # Create model instance
-    detector = AIDetectionModel(model_path)
+    detector = AIDetectionModel()
 
     test_sentence = """Cook was clear in positioning privacy as a central pillar of Apple's AI value proposition. The private cloud compute architecture, designed to minimize the amount of user data leaving the device, is a counterpoint to competitors that require extensive cloud data processing.
 

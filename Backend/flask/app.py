@@ -27,8 +27,7 @@ app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
 # In-memory storage for session data (use Redis in production)
 session_data = {}
 
-model_path = "C:\\Users\\mubas\\OneDrive\\Desktop\\CSC 3003S\\Capstone\\checkpoint-4250"
-model = AIDetectionModel(model_path)
+model = AIDetectionModel()
 
 def allowed_file(filename):
     #Check if file extension is allowed
@@ -186,7 +185,6 @@ def detect_ai():
         try:
             prediction = model.predict(text)
         except Exception as e:
-            import traceback
             print("MODEL ERROR TRACEBACK:")
             print(traceback.format_exc())
             return jsonify({
@@ -211,7 +209,6 @@ def detect_ai():
             session_data[session['session_id']]['analyses'].append(analysis)
             print("Analysis stored in session")
         except Exception as e:
-            import traceback
             print("SESSION APPEND ERROR:\n", traceback.format_exc())
             return jsonify({
                 'error': 'Failed to store analysis in session',
