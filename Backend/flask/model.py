@@ -10,7 +10,7 @@ class AIDetectionModel:
         self.model = AutoModelForSequenceClassification.from_pretrained(model_path)
         
         # Set up device
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cpu")
         self.model.to(self.device)
         self.model.eval()
     
@@ -36,7 +36,6 @@ class AIDetectionModel:
             
             # Calculate confidence score (probability of predicted class)
             confidence_score = max(human_prob, ai_prob)
-        
         return {
             'human_probability': human_prob,
             'ai_probability': ai_prob,

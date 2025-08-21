@@ -9,6 +9,7 @@ from werkzeug.utils import secure_filename
 import PyPDF2
 import docx
 import tempfile
+import traceback
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here')  # Change in production
@@ -17,8 +18,8 @@ CORS(app)
 # Configuration
 UPLOAD_FOLDER = tempfile.gettempdir()
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'docx'}
-MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
-MAX_TEXT_LENGTH = 20000  # Increased for file uploads
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+MAX_TEXT_LENGTH = 5000  # Increased for file uploads
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
@@ -112,7 +113,9 @@ def ensure_session(f):
     def decorated_function(*args, **kwargs):
         if 'session_id' not in session:
             session['session_id'] = str(uuid.uuid4())
-            session_data[session['session_id']] = {
+        sid = session['session_id']
+        if sid not in session_data:
+            session_data[sid] = {
                 'created_at': datetime.datetime.now(),
                 'analyses': []
             }
@@ -132,7 +135,7 @@ def health_check():
 @app.route('/api/detect', methods=['POST'])
 @ensure_session
 def detect_ai():
-    # Main endpoint for AI detection - handles both text and file input
+    # Main endpoint for AI detection - handles both text and file input 
     try:
         text = None
         filename = None
@@ -178,9 +181,19 @@ def detect_ai():
             return jsonify({
                 'error': f'Text must be less than {MAX_TEXT_LENGTH:,} characters'
             }), 400
-        
+
         # Simulate AI model prediction
-        prediction = model.predict(text)
+        try:
+            prediction = model.predict(text)
+        except Exception as e:
+            import traceback
+            print("MODEL ERROR TRACEBACK:")
+            print(traceback.format_exc())
+            return jsonify({
+                'error': 'Model prediction failed',
+                'message': str(e)
+            }), 500
+
         
         # Store analysis in session data
         analysis_id = str(uuid.uuid4())
@@ -193,9 +206,18 @@ def detect_ai():
             'source_type': source_type,
             'filename': filename
         }
-        
-        session_data[session['session_id']]['analyses'].append(analysis)
-        
+
+        try:
+            session_data[session['session_id']]['analyses'].append(analysis)
+            print("Analysis stored in session")
+        except Exception as e:
+            import traceback
+            print("SESSION APPEND ERROR:\n", traceback.format_exc())
+            return jsonify({
+                'error': 'Failed to store analysis in session',
+                'message': str(e)
+            }), 500
+
         return jsonify({
             'success': True,
             'analysis_id': analysis_id,
