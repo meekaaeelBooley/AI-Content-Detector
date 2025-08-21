@@ -18,7 +18,6 @@ class AIDetectionModel:
         # Predict whether text is AI-generated or human-written
         # Returns a dictionary with probabilities and confidence
 
-        # Tokenize the input
         inputs = self.tokenizer(text, return_tensors="pt", truncation=True, padding=True, max_length=512)
         
         # Move inputs to device
@@ -28,8 +27,7 @@ class AIDetectionModel:
         with torch.no_grad():
             outputs = self.model(**inputs)
             logits = outputs.logits
-            
-            # Convert logits to probabilities using softmax
+
             probabilities = F.softmax(logits, dim=-1)
             
             # Extract individual probabilities
@@ -46,10 +44,9 @@ class AIDetectionModel:
         }
     
     def predict_with_confidence(self, text):
-        #Predict with additional confidence level categorization        
+        # Predict with additional confidence level categorization
         result = self.predict(text)
         
-        # Get the predicted class
         prediction = 1 if result['ai_probability'] > result['human_probability'] else 0
         confidence_score = result['confidence']
         
@@ -78,7 +75,7 @@ class AIDetectionModel:
         }
     
     def batch_predict(self, texts):
-        #Predict for multiple texts
+        # Predict for multiple texts
         results = []
         for text in texts:
             result = self.predict(text)
@@ -98,16 +95,13 @@ if __name__ == "__main__":
     
     # Create model instance
     detector = AIDetectionModel(model_path)
-    
-    # Test sentence
+
     test_sentence = """Cook was clear in positioning privacy as a central pillar of Apple's AI value proposition. The private cloud compute architecture, designed to minimize the amount of user data leaving the device, is a counterpoint to competitors that require extensive cloud data processing.
 
 The CEO argued that this hybrid approach — balancing on-device AI with selective, secure server-based computing — offers "the best way for users to experience the full potential of generative AI" without sacrificing security or personal data integrity."""
 
-    # Get prediction
     result = detector.predict_with_confidence(test_sentence)
     
-    # Print results
     print("="*50)
     print("AI Detection Results")
     print("="*50)
@@ -119,7 +113,6 @@ The CEO argued that this hybrid approach — balancing on-device AI with selecti
     print(f"Human Probability: {result['human_probability']:.4f} ({result['human_probability']*100:.2f}%)")
     print(f"AI Probability: {result['ai_probability']:.4f} ({result['ai_probability']*100:.2f}%)")
     
-    # Test with multiple sentences
     test_sentences = [
         "I feel like a lot of what people think of as a failing of GPT-5 is really a failing of the router.",
         "The router is just not good at knowing when to switch models, or into a mode that uses tools.",

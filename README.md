@@ -9,8 +9,8 @@ This Flask API provides AI content detection capabilities, supporting both text 
 To test locally or change the model path, update the following line in `app.py`:
 
 ```python
-# Line 26 in app.py
-model_path = "C:\\Model"
+# Line 8 in model.py
+model_path = "C:\\Model_path"
 ```
 
 Replace this path with your local model directory path.
@@ -36,7 +36,7 @@ Check if the API is running and get configuration information.
     "status": "healthy",
     "timestamp": "2025-01-15T10:30:00.123456",
     "supported_formats": ["txt", "pdf", "docx"],
-    "max_file_size_mb": 16
+    "max_file_size_mb": 5
 }
 ```
 
@@ -150,8 +150,8 @@ files: [file1.pdf, file2.docx, file3.txt, ...]
 
 #### Limitations:
 - Maximum 10 files/texts per batch
-- Each text must be 10-50,000 characters
-- File size limit: 16MB per file
+- Each text must be 10-5000 characters
+- File size limit: 5MB per file
 
 ---
 
@@ -260,7 +260,7 @@ Clear all analysis history for the current session.
 - **Text File** (.txt)
 
 ### Limitations
-- Maximum file size: 10MB
+- Maximum file size: 5MB
 - Maximum text length: 5000 characters
 - Minimum text length: 10 characters
 
@@ -278,7 +278,7 @@ The API uses Flask sessions to track user activity:
 - Each user gets a unique session ID
 - Analysis history is stored per session
 - Sessions are maintained using browser cookies
-- Session data is stored in memory (use Redis for production)
+- Session data is stored in memory
 
 ---
 
@@ -297,7 +297,7 @@ The API uses Flask sessions to track user activity:
 - Invalid endpoint
 
 **413 Payload Too Large**
-- File size exceeds 10MB limit
+- File size exceeds 5MB limit
 
 **500 Internal Server Error**
 - Model prediction failure
@@ -372,7 +372,5 @@ Currently uses in-memory storage. For production deployment, consider:
 
 ### Security Considerations
 - Change the secret key in production
-- Implement rate limiting
-- Add authentication if needed
 - Validate file types more strictly
 - Implement virus scanning for uploaded files

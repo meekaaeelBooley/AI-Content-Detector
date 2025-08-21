@@ -11,7 +11,7 @@ import docx
 import tempfile
 
 app = Flask(__name__)
-#app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here')  # Change in production
+app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here')  # Change in production
 CORS(app)
 
 # Configuration
