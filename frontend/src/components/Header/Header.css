@@ -1,0 +1,32 @@
+/* Header component styles with light blue background and responsive design */
+.header {
+  background-color: #F0F7FB; /* Light blue background */
+  padding: 0.8rem 2rem;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle bottom shadow */
+  height: 64px; /* Fixed header height */
+}
+
+.app-name {
+  font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  color: #3D2D4C; /* Dark purple text color */
+  font-size: 1.5rem;
+  font-weight: bold;
+  cursor: pointer; /* Indicates the logo is clickable */
+  margin: 0;
+}
+
+/* Responsive design for mobile devices. In Progress. Still exerimenting. */
+@media (max-width: 768px) {
+  .header {
+    padding: 0.64rem 1rem; /* Reduced padding on mobile */
+    height: 51px; /* Slightly shorter header on mobile */
+  }
+  
+  .app-name {
+    font-size: 1.2rem; /* Smaller font size on mobile */
+  }
+}

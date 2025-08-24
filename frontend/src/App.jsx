@@ -1,17 +1,13 @@
-import intropic from './assets/nuts.jpg'
+// Main application component that serves as the root container
+import AITextDetectorPage from './features/AITextDetectorPage/AITextDetectorPage'
 import './App.css'
 
 function App() {
-
   return (
-    <>
-      <div>
-        <a href="https://react.dev" target="_blank">
-          <img src={intropic} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Deez Nuts</h1>
-    </>
+    <div className="App">
+      {/* Renders the main AI text detector page component */}
+      <AITextDetectorPage />
+    </div>
   )
 }
 

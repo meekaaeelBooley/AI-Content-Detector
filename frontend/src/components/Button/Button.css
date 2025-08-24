@@ -1,0 +1,36 @@
+/* Custom button styles with purple theme and interactive states */
+.custom-button {
+  background-color: #8E12D5; /* Primary purple color */
+  color: white;
+  border: none;
+  border-radius: 100px; /* Fully rounded pill shape */
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out; /* Smooth transitions for all properties */
+  outline: none; /* Remove default focus outline */
+}
+
+/* Hover state - slightly darker purple with lift effect */
+.custom-button:hover {
+  background-color: #7a0fbb;
+  transform: translateY(-1px); /* Subtle lift on hover */
+}
+
+/* Active and clicked states - invert colors with border */
+.custom-button:active,
+.custom-button.clicked {
+  background-color: white;
+  color: #8E12D5;
+  border: 2px solid #8E12D5; /* Purple border when active */
+  transform: translateY(0); /* Reset lift effect */
+}
+
+/* Disabled state - grayed out with no interactions */
+.custom-button:disabled {
+  background-color: #cccccc;
+  color: #666666;
+  cursor: not-allowed; /* Show disabled cursor */
+  transform: none; /* Remove any transform effects */
+}
