@@ -12,19 +12,18 @@ import tempfile
 import traceback
 from functools import wraps
 
-# Commands to install packages:
+# Import the Redis manager we created
+from redis_manager import redis_manager
 
-# pip install torch --no-cache-dir
-# pip install transformers --no-cache-dir
-# pip install flask flask-cors PyPDF2 python-docx werkzeug
+# pip install torch transformers flask flask-cors PyPDF2 python-docx werkzeug redis
 
-# API is kept static for the purpose of this academic project
 API_KEYS = {"jackboys25"}
 
-# This function requires the api key to be attached to the header for each request.
-# Header will look like this:
-# X-API-KEY: jackboys25
 def require_api_key(f):
+    """
+    Decorator to require API key authentication.
+    Checks for API key in headers (X-API-Key) or query parameters (api_key).
+    """
     @wraps(f)
     def decorated_function(*args, **kwargs):
         # Check for API key in headers or query parameters
@@ -34,7 +33,6 @@ def require_api_key(f):
             return jsonify({
                 'error': 'Valid API key required',
                 'message': 'Use X-API-Key header or api_key query parameter'
-                # X-api-key indicates custom header as opposed to traditional api-key
             }), 401
         
         return f(*args, **kwargs)
@@ -54,17 +52,15 @@ MAX_TEXT_LENGTH = 5000  # Increased for file uploads
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
 
-# In-memory storage for session data (use Redis in production)
-session_data = {}
-
+# Initialize the AI detection model
 model = AIDetectionModel()
 
 def allowed_file(filename):
-    #Check if file extension is allowed
+    """Check if file extension is allowed"""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def extract_text_from_pdf(file_path):
-    # Extract text from PDF file
+    """Extract text from PDF file using PyPDF2"""
     try:
         text = ""
         with open(file_path, 'rb') as file:
@@ -76,7 +72,7 @@ def extract_text_from_pdf(file_path):
         raise Exception(f"Error reading PDF: {str(e)}")
 
 def extract_text_from_docx(file_path):
-    # Extract text from DOCX file
+    """Extract text from DOCX file using python-docx"""
     try:
         doc = docx.Document(file_path)
         text = ""
@@ -87,7 +83,7 @@ def extract_text_from_docx(file_path):
         raise Exception(f"Error reading DOCX: {str(e)}")
 
 def extract_text_from_txt(file_path):
-    # Extract text from TXT file
+    """Extract text from TXT file with encoding fallback"""
     try:
         with open(file_path, 'r', encoding='utf-8') as file:
             return file.read().strip()
@@ -101,7 +97,10 @@ def extract_text_from_txt(file_path):
         raise Exception(f"Error reading TXT file: {str(e)}")
 
 def process_uploaded_file(file):
-    # Process uploaded file and extract text
+    """
+    Process uploaded file and extract text.
+    Handles multiple file types and ensures proper cleanup of temp files.
+    """
     if not file or file.filename == '':
         raise ValueError("No file selected")
     
@@ -131,53 +130,68 @@ def process_uploaded_file(file):
         return text, filename
         
     except Exception as e:
-        # Clean up temp file if it exists
+        # Clean up temp file if it exists (important for security)
         if os.path.exists(file_path):
             os.remove(file_path)
         raise e
 
 def ensure_session(f):
-    # Decorator to ensure each request has a session ID
+    """
+    Decorator to ensure each request has a valid session.
+    Creates new session in Redis if it doesn't exist.
+    """
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'session_id' not in session:
             session['session_id'] = str(uuid.uuid4())
         sid = session['session_id']
-        if sid not in session_data:
-            session_data[sid] = {
+        
+        # Check if session exists in Redis, create if not
+        # This replaces the in-memory session_data dictionary
+        session_data = redis_manager.get_session(sid)
+        if not session_data:
+            session_data = {
                 'created_at': datetime.datetime.now(),
                 'analyses': []
             }
+            redis_manager.store_session(sid, session_data)
+        
         return f(*args, **kwargs)
     return decorated_function
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
-    # Health check endpoint
+    """Health check endpoint with system information"""
+    redis_status = "connected" if redis_manager.is_connected() else "disconnected"
+    
     return jsonify({
         'status': 'healthy',
         'timestamp': datetime.datetime.now().isoformat(),
         'supported_formats': list(ALLOWED_EXTENSIONS),
-        'max_file_size_mb': MAX_FILE_SIZE / (1024 * 1024)
+        'max_file_size_mb': MAX_FILE_SIZE / (1024 * 1024),
+        'redis_status': redis_status
     })
 
 @app.route('/api/detect', methods=['POST'])
 @require_api_key
 @ensure_session
 def detect_ai():
-    # Main endpoint for AI detection - handles both text and file input 
+    """
+    Main endpoint for AI detection - handles both text and file input.
+    Now stores session data in Redis instead of in-memory.
+    """
     try:
         text = None
         filename = None
         source_type = 'text'
         
-        # Check if it's a file upload
+        # Check if it's a file upload (multipart/form-data)
         if 'file' in request.files:
             file = request.files['file']
             text, filename = process_uploaded_file(file)
             source_type = 'file'
         
-        # Check if it's JSON text input
+        # Check if it's JSON text input (application/json)
         elif request.is_json:
             data = request.get_json()
             if not data or 'text' not in data:
@@ -187,7 +201,7 @@ def detect_ai():
             text = data['text'].strip()
             source_type = 'text'
         
-        # Check if it's form text input
+        # Check if it's form text input (application/x-www-form-urlencoded)
         elif 'text' in request.form:
             text = request.form['text'].strip()
             source_type = 'text'
@@ -212,7 +226,7 @@ def detect_ai():
                 'error': f'Text must be less than {MAX_TEXT_LENGTH:,} characters'
             }), 400
 
-        # Simulate AI model prediction
+        # Get AI model prediction
         try:
             prediction = model.predict(text)
         except Exception as e:
@@ -224,26 +238,23 @@ def detect_ai():
             }), 500
 
         
-        # Store analysis in session data
+        # Create analysis record
         analysis_id = str(uuid.uuid4())
         analysis = {
             'id': analysis_id,
             'text_preview': text[:200] + ('...' if len(text) > 200 else ''),
             'result': prediction,
-            'timestamp': datetime.datetime.now().isoformat(),
+            'timestamp': datetime.datetime.now(),
             'text_length': len(text),
             'source_type': source_type,
             'filename': filename
         }
 
-        try:
-            session_data[session['session_id']]['analyses'].append(analysis)
-            print("Analysis stored in session")
-        except Exception as e:
-            print("SESSION APPEND ERROR:\n", traceback.format_exc())
+        # Store analysis in Redis instead of in-memory session_data
+        if not redis_manager.update_session_analyses(session['session_id'], analysis):
             return jsonify({
                 'error': 'Failed to store analysis in session',
-                'message': str(e)
+                'message': 'Redis storage error'
             }), 500
 
         return jsonify({
@@ -275,7 +286,10 @@ def detect_ai():
 @require_api_key
 @ensure_session
 def batch_detect():
-    # Endpoint for batch text analysis - supports multiple files or texts
+    """
+    Endpoint for batch text analysis - supports multiple files or texts.
+    Now uses Redis for session storage.
+    """
     try:
         results = []
         
@@ -316,13 +330,20 @@ def batch_detect():
                         'id': analysis_id,
                         'text_preview': text[:200] + ('...' if len(text) > 200 else ''),
                         'result': prediction,
-                        'timestamp': datetime.datetime.now().isoformat(),
+                        'timestamp': datetime.datetime.now(),
                         'text_length': len(text),
                         'source_type': 'file',
                         'filename': filename
                     }
                     
-                    session_data[session['session_id']]['analyses'].append(analysis)
+                    # Store in Redis instead of in-memory
+                    if not redis_manager.update_session_analyses(session['session_id'], analysis):
+                        results.append({
+                            'index': idx,
+                            'filename': filename,
+                            'error': 'Failed to store analysis in session'
+                        })
+                        continue
                     
                     results.append({
                         'index': idx,
@@ -396,13 +417,19 @@ def batch_detect():
                     'id': analysis_id,
                     'text_preview': text[:200] + ('...' if len(text) > 200 else ''),
                     'result': prediction,
-                    'timestamp': datetime.datetime.now().isoformat(),
+                    'timestamp': datetime.datetime.now(),
                     'text_length': len(text),
                     'source_type': 'text',
                     'filename': None
                 }
                 
-                session_data[session['session_id']]['analyses'].append(analysis)
+                # Store in Redis instead of in-memory
+                if not redis_manager.update_session_analyses(session['session_id'], analysis):
+                    results.append({
+                        'index': idx,
+                        'error': 'Failed to store analysis in session'
+                    })
+                    continue
                 
                 results.append({
                     'index': idx,
@@ -437,12 +464,26 @@ def batch_detect():
 @require_api_key
 @ensure_session
 def get_history():
-    # Get analysis history for current session
+    """
+    Get analysis history for current session from Redis.
+    Returns last 20 analyses to prevent excessive data transfer.
+    """
     try:
         session_id = session['session_id']
-        analyses = session_data.get(session_id, {}).get('analyses', [])
+        session_data = redis_manager.get_session(session_id)
         
-        # Return last 20 analyses
+        # Handle case where session doesn't exist in Redis (shouldn't happen with ensure_session)
+        if not session_data:
+            return jsonify({
+                'success': True,
+                'analyses': [],
+                'total_analyses': 0,
+                'session_id': session_id
+            })
+        
+        analyses = session_data.get('analyses', [])
+        
+        # Return last 20 analyses to prevent large responses
         recent_analyses = analyses[-20:] if len(analyses) > 20 else analyses
         
         return jsonify({
@@ -462,11 +503,19 @@ def get_history():
 @require_api_key
 @ensure_session
 def get_analysis(analysis_id):
-    # Get specific analysis by ID
+    """
+    Get specific analysis by ID from Redis session data.
+    """
     try:
         session_id = session['session_id']
-        analyses = session_data.get(session_id, {}).get('analyses', [])
+        session_data = redis_manager.get_session(session_id)
         
+        if not session_data:
+            return jsonify({
+                'error': 'Session not found'
+            }), 404
+        
+        analyses = session_data.get('analyses', [])
         analysis = next((a for a in analyses if a['id'] == analysis_id), None)
         
         if not analysis:
@@ -489,16 +538,23 @@ def get_analysis(analysis_id):
 @require_api_key
 @ensure_session
 def get_session_info():
-    # Get current session information
+    """
+    Get current session information from Redis.
+    """
     try:
         session_id = session['session_id']
-        session_info = session_data.get(session_id, {})
+        session_data = redis_manager.get_session(session_id)
+        
+        if not session_data:
+            return jsonify({
+                'error': 'Session not found'
+            }), 404
         
         return jsonify({
             'success': True,
             'session_id': session_id,
-            'created_at': session_info.get('created_at', '').isoformat() if session_info.get('created_at') else None,
-            'total_analyses': len(session_info.get('analyses', []))
+            'created_at': session_data.get('created_at', '').isoformat() if session_data.get('created_at') else None,
+            'total_analyses': len(session_data.get('analyses', []))
         })
         
     except Exception as e:
@@ -511,11 +567,15 @@ def get_session_info():
 @require_api_key
 @ensure_session
 def clear_history():
-    # Clear analysis history for current session
+    """
+    Clear analysis history for current session in Redis.
+    """
     try:
         session_id = session['session_id']
-        if session_id in session_data:
-            session_data[session_id]['analyses'] = []
+        if not redis_manager.clear_session_analyses(session_id):
+            return jsonify({
+                'error': 'Failed to clear history'
+            }), 500
         
         return jsonify({
             'success': True,
@@ -530,6 +590,7 @@ def clear_history():
 
 @app.errorhandler(413)
 def too_large(e):
+    """Handle file size limit exceeded errors"""
     return jsonify({
         'error': 'File too large',
         'max_size_mb': MAX_FILE_SIZE / (1024 * 1024)
@@ -537,21 +598,28 @@ def too_large(e):
 
 @app.errorhandler(404)
 def not_found(error):
+    """Handle 404 errors"""
     return jsonify({
         'error': 'Endpoint not found'
     }), 404
 
 @app.errorhandler(405)
 def method_not_allowed(error):
+    """Handle 405 errors"""
     return jsonify({
         'error': 'Method not allowed'
     }), 405
 
 @app.errorhandler(500)
 def internal_error(error):
+    """Handle 500 errors"""
     return jsonify({
         'error': 'Internal server error'
     }), 500
 
 if __name__ == '__main__':
+    # Check Redis connection before starting
+    if not redis_manager.is_connected():
+        print("WARNING: Redis connection failed. Sessions will not be persisted.")
+    
     app.run(debug=True, host='0.0.0.0', port=5000)
