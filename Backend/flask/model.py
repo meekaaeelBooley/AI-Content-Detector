@@ -4,8 +4,14 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
 class AIDetectionModel:
     def __init__(self):
-        # Initialize the AI detection model with the given path
-        self.model_path = "C:\\Users\\mubas\\OneDrive\\Desktop\\CSC 3003S\\Capstone\\checkpoint-4250"
+        # Initialize the AI detection model with the appropriate path
+
+        # This path is for the backend hosted on the AWS EC2 Instance (Virtual Machine):
+        # self.model_path = "/home/ubuntu/aicd-backend/ai_detector_model"
+
+        # This path is for when the model is located on our machines.
+        self.model_path = "./ai_detector_model"
+
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_path)
         self.model = AutoModelForSequenceClassification.from_pretrained(self.model_path)
 
