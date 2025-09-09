@@ -10,6 +10,36 @@ import PyPDF2
 import docx
 import tempfile
 import traceback
+from functools import wraps
+
+# Commands to install packages:
+
+# pip install torch --no-cache-dir
+# pip install transformers --no-cache-dir
+# pip install flask flask-cors PyPDF2 python-docx werkzeug
+
+# API is kept static for the purpose of this academic project
+API_KEYS = {"jackboys25"}
+
+# This function requires the api key to be attached to the header for each request.
+# Header will look like this:
+# X-API-KEY: jackboys25
+def require_api_key(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Check for API key in headers or query parameters
+        api_key = request.headers.get('X-API-Key') or request.args.get('api_key')
+        
+        if not api_key or api_key not in API_KEYS:
+            return jsonify({
+                'error': 'Valid API key required',
+                'message': 'Use X-API-Key header or api_key query parameter'
+                # X-api-key indicates custom header as opposed to traditional api-key
+            }), 401
+        
+        return f(*args, **kwargs)
+    return decorated_function
+
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here')  # Change in production
@@ -132,6 +162,7 @@ def health_check():
     })
 
 @app.route('/api/detect', methods=['POST'])
+@require_api_key
 @ensure_session
 def detect_ai():
     # Main endpoint for AI detection - handles both text and file input 
@@ -241,6 +272,7 @@ def detect_ai():
         }), 500
 
 @app.route('/api/batch-detect', methods=['POST'])
+@require_api_key
 @ensure_session
 def batch_detect():
     # Endpoint for batch text analysis - supports multiple files or texts
@@ -402,6 +434,7 @@ def batch_detect():
         }), 500
 
 @app.route('/api/history', methods=['GET'])
+@require_api_key
 @ensure_session
 def get_history():
     # Get analysis history for current session
@@ -426,6 +459,7 @@ def get_history():
         }), 500
 
 @app.route('/api/analysis/<analysis_id>', methods=['GET'])
+@require_api_key
 @ensure_session
 def get_analysis(analysis_id):
     # Get specific analysis by ID
@@ -452,6 +486,7 @@ def get_analysis(analysis_id):
         }), 500
 
 @app.route('/api/session', methods=['GET'])
+@require_api_key
 @ensure_session
 def get_session_info():
     # Get current session information
@@ -473,6 +508,7 @@ def get_session_info():
         }), 500
 
 @app.route('/api/clear-history', methods=['DELETE'])
+@require_api_key
 @ensure_session
 def clear_history():
     # Clear analysis history for current session
