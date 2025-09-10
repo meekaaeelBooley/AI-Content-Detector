@@ -7,6 +7,34 @@ import os
 import traceback
 from file_processor import FileProcessor
 from text_analyser import TextAnalyser
+from functools import wraps
+
+# Import the Redis manager we created
+from redis_manager import redis_manager
+
+# pip install torch transformers flask flask-cors PyPDF2 python-docx werkzeug redis
+
+API_KEYS = {"jackboys25"}
+
+def require_api_key(f):
+    """
+    Decorator to require API key authentication.
+    Checks for API key in headers (X-API-Key) or query parameters (api_key).
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Check for API key in headers or query parameters
+        api_key = request.headers.get('X-API-Key') or request.args.get('api_key')
+        
+        if not api_key or api_key not in API_KEYS:
+            return jsonify({
+                'error': 'Valid API key required',
+                'message': 'Use X-API-Key header or api_key query parameter'
+            }), 401
+        
+        return f(*args, **kwargs)
+    return decorated_function
+
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here')  # Change in production
@@ -15,53 +43,66 @@ CORS(app)
 app.config['UPLOAD_FOLDER'] = FileProcessor().upload_folder
 app.config['MAX_CONTENT_LENGTH'] = FileProcessor.MAX_FILE_SIZE
 
-# In-memory storage for session data (use Redis in production)
+# In-memory session data as a fallback if Redis is unavailable
 session_data = {}
 
 file_processor = FileProcessor()
 text_analyser = TextAnalyser()
 
 def ensure_session(f):
-    # Decorator to ensure each request has a session ID
+    """
+    Decorator to ensure each request has a valid session.
+    Creates new session in Redis if it doesn't exist.
+    """
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'session_id' not in session:
             session['session_id'] = str(uuid.uuid4())
         sid = session['session_id']
-        if sid not in session_data:
-            session_data[sid] = {
+        
+        # Check if session exists in Redis, create if not
+        # This replaces the in-memory session_data dictionary
+        session_data = redis_manager.get_session(sid)
+        if not session_data:
+            session_data = {
                 'created_at': datetime.datetime.now(),
                 'analyses': []
             }
+            redis_manager.store_session(sid, session_data)
+        
         return f(*args, **kwargs)
     return decorated_function
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
-    # Health check endpoint
+    """Health check endpoint with system information"""
+    redis_status = "connected" if redis_manager.is_connected() else "disconnected"
+    
     return jsonify({
         'status': 'healthy',
         'timestamp': datetime.datetime.now().isoformat(),
         'supported_formats': list(FileProcessor.ALLOWED_EXTENSIONS),
-        'max_file_size_mb': FileProcessor.MAX_FILE_SIZE / (1024 * 1024)
+        'max_file_size_mb': FileProcessor.MAX_FILE_SIZE / (1024 * 1024),
+        'redis_status': redis_status
     })
 
 @app.route('/api/detect', methods=['POST'])
+@require_api_key
 @ensure_session
 def detect_ai():
-    # Main endpoint for AI detection - handles both text and file input 
+    # Main endpoint for AI detection - handles both text and file input
     try:
         text = None
         filename = None
         source_type = 'text'
         
-        # Check if it's a file upload
+        # Check if it's a file upload (multipart/form-data)
         if 'file' in request.files:
             file = request.files['file']
             text, filename = file_processor.process_file(file)
             source_type = 'file'
         
-        # Check if it's JSON text input
+        # Check if it's JSON text input (application/json)
         elif request.is_json:
             data = request.get_json()
             if not data or 'text' not in data:
@@ -71,7 +112,7 @@ def detect_ai():
             text = data['text'].strip()
             source_type = 'text'
         
-        # Check if it's form text input
+        # Check if it's form text input (application/x-www-form-urlencoded)
         elif 'text' in request.form:
             text = request.form['text'].strip()
             source_type = 'text'
@@ -128,21 +169,29 @@ def detect_ai():
         session_analysis = {
             'id': analysis_id,
             'text_preview': text[:200] + ('...' if len(text) > 200 else ''),
-            'timestamp': datetime.datetime.now().isoformat(),
+            'timestamp': datetime.datetime.now(),
             'text_length': len(text),
             'source_type': source_type,
             'filename': filename,
             **analysis_result['session_data']  # Merge in the analysis-specific data
         }
-        
+
+        # Store analysis in Redis instead of in-memory session_data
         try:
-            session_data[session['session_id']]['analyses'].append(session_analysis)
-            print(f"{analysis_result['analysis_type']} analysis stored in session")
+            # Primary storage: Redis
+            if redis_manager and redis_manager.update_session_analyses(session['session_id'], session_analysis):
+                print(f"{analysis_result['analysis_type']} analysis stored in Redis")
+            else:
+                # Fallback to in-memory storage if Redis fails
+                print("Redis storage failed, falling back to in-memory session storage")
+                session_data[session['session_id']]['analyses'].append(session_analysis)
+                print(f"{analysis_result['analysis_type']} analysis stored in session (fallback)")
+                
         except Exception as e:
             print("SESSION APPEND ERROR:\n", traceback.format_exc())
             return jsonify({
                 'error': 'Failed to store analysis in session',
-                'message': str(e)
+                'message': 'Redis storage error'
             }), 500
 
         # Return the API response (already formatted by TextAnalyzer)
@@ -166,14 +215,26 @@ def detect_ai():
         }), 500
 
 @app.route('/api/history', methods=['GET'])
+@require_api_key
 @ensure_session
 def get_history():
     # Get analysis history for current session
     try:
         session_id = session['session_id']
-        analyses = session_data.get(session_id, {}).get('analyses', [])
+        session_data = redis_manager.get_session(session_id)
         
-        # Return last 20 analyses
+        # Handle case where session doesn't exist in Redis (shouldn't happen with ensure_session)
+        if not session_data:
+            return jsonify({
+                'success': True,
+                'analyses': [],
+                'total_analyses': 0,
+                'session_id': session_id
+            })
+        
+        analyses = session_data.get('analyses', [])
+        
+        # Return last 20 analyses to prevent large responses
         recent_analyses = analyses[-20:] if len(analyses) > 20 else analyses
         
         return jsonify({
@@ -190,13 +251,20 @@ def get_history():
         }), 500
 
 @app.route('/api/analysis/<analysis_id>', methods=['GET'])
+@require_api_key
 @ensure_session
 def get_analysis(analysis_id):
     # Get specific analysis by ID
     try:
         session_id = session['session_id']
-        analyses = session_data.get(session_id, {}).get('analyses', [])
+        session_data = redis_manager.get_session(session_id)
         
+        if not session_data:
+            return jsonify({
+                'error': 'Session not found'
+            }), 404
+        
+        analyses = session_data.get('analyses', [])
         analysis = next((a for a in analyses if a['id'] == analysis_id), None)
         
         if not analysis:
@@ -216,18 +284,24 @@ def get_analysis(analysis_id):
         }), 500
 
 @app.route('/api/session', methods=['GET'])
+@require_api_key
 @ensure_session
 def get_session_info():
     # Get current session information
     try:
         session_id = session['session_id']
-        session_info = session_data.get(session_id, {})
+        session_data = redis_manager.get_session(session_id)
+        
+        if not session_data:
+            return jsonify({
+                'error': 'Session not found'
+            }), 404
         
         return jsonify({
             'success': True,
             'session_id': session_id,
-            'created_at': session_info.get('created_at', '').isoformat() if session_info.get('created_at') else None,
-            'total_analyses': len(session_info.get('analyses', []))
+            'created_at': session_data.get('created_at', '').isoformat() if session_data.get('created_at') else None,
+            'total_analyses': len(session_data.get('analyses', []))
         })
         
     except Exception as e:
@@ -237,13 +311,16 @@ def get_session_info():
         }), 500
 
 @app.route('/api/clear-history', methods=['DELETE'])
+@require_api_key
 @ensure_session
 def clear_history():
     # Clear analysis history for current session
     try:
         session_id = session['session_id']
-        if session_id in session_data:
-            session_data[session_id]['analyses'] = []
+        if not redis_manager.clear_session_analyses(session_id):
+            return jsonify({
+                'error': 'Failed to clear history'
+            }), 500
         
         return jsonify({
             'success': True,
@@ -282,4 +359,8 @@ def internal_error(error):
     }), 500
 
 if __name__ == '__main__':
+    # Check Redis connection before starting
+    if not redis_manager.is_connected():
+        print("WARNING: Redis connection failed. Sessions will not be persisted.")
+    
     app.run(debug=True, host='0.0.0.0', port=5000)
