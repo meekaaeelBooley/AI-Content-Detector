@@ -1,5 +1,4 @@
 from flask import Flask, request, jsonify, session
-from model import AIDetectionModel
 from flask_cors import CORS
 import uuid
 import datetime
@@ -7,23 +6,20 @@ from functools import wraps
 import os
 import traceback
 from file_processor import FileProcessor
+from text_analyser import TextAnalyser
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here')  # Change in production
 CORS(app)
 
-# Configuration
-MAX_TEXT_LENGTH = 5000  # Increased for file uploads
-MIN_SENTENCE_LENGTH = 5 
-
-app.config['UPLOAD_FOLDER'] = FileProcessor.UPLOAD_FOLDER
+app.config['UPLOAD_FOLDER'] = FileProcessor().upload_folder
 app.config['MAX_CONTENT_LENGTH'] = FileProcessor.MAX_FILE_SIZE
 
 # In-memory storage for session data (use Redis in production)
 session_data = {}
 
 file_processor = FileProcessor()
-model = AIDetectionModel()
+text_analyser = TextAnalyser()
 
 def ensure_session(f):
     # Decorator to ensure each request has a session ID
@@ -62,7 +58,7 @@ def detect_ai():
         # Check if it's a file upload
         if 'file' in request.files:
             file = request.files['file']
-            text, filename = file_processor.process_uploaded_file(file)
+            text, filename = file_processor.process_file(file)
             source_type = 'file'
         
         # Check if it's JSON text input
@@ -70,7 +66,7 @@ def detect_ai():
             data = request.get_json()
             if not data or 'text' not in data:
                 return jsonify({
-                    'error': 'Either upload a file or provide text field in JSON'
+                    'error': 'Provide text field in JSON'
                 }), 400
             text = data['text'].strip()
             source_type = 'text'
@@ -94,39 +90,54 @@ def detect_ai():
             return jsonify({
                 'error': 'Text must be at least 10 characters long'
             }), 400
-        
-        if len(text) > MAX_TEXT_LENGTH:
+
+        if len(text) > text_analyser.MAX_TEXT_LENGTH:
             return jsonify({
-                'error': f'Text must be less than {MAX_TEXT_LENGTH:,} characters'
+                'error': f'Text must be less than {text_analyser.MAX_TEXT_LENGTH:,} characters'
             }), 400
 
-        # Simulate AI model prediction
+        # Check for force_single_analysis flag
+        force_single_analysis = False
+        if request.is_json and request.get_json().get('force_single_analysis', False):
+            force_single_analysis = True
+        elif 'force_single_analysis' in request.form:
+            force_single_analysis = True
+        
+        # Analyze the text
         try:
-            prediction = model.predict(text)
+            analysis_result = text_analyser.analyse_text(
+                text, 
+                source_type=source_type, 
+                filename=filename, 
+                force_single_analysis=force_single_analysis
+            )
+        except ValueError as e:
+            return jsonify({'error': str(e)}), 400
         except Exception as e:
-            print("MODEL ERROR TRACEBACK:")
+            print("ANALYSIS ERROR TRACEBACK:")
             print(traceback.format_exc())
             return jsonify({
-                'error': 'Model prediction failed',
+                'error': 'Text analysis failed',
                 'message': str(e)
             }), 500
 
-        
         # Store analysis in session data
         analysis_id = str(uuid.uuid4())
-        analysis = {
+        
+        # Build session storage data
+        session_analysis = {
             'id': analysis_id,
             'text_preview': text[:200] + ('...' if len(text) > 200 else ''),
-            'result': prediction,
             'timestamp': datetime.datetime.now().isoformat(),
             'text_length': len(text),
             'source_type': source_type,
-            'filename': filename
+            'filename': filename,
+            **analysis_result['session_data']  # Merge in the analysis-specific data
         }
-
+        
         try:
-            session_data[session['session_id']]['analyses'].append(analysis)
-            print("Analysis stored in session")
+            session_data[session['session_id']]['analyses'].append(session_analysis)
+            print(f"{analysis_result['analysis_type']} analysis stored in session")
         except Exception as e:
             print("SESSION APPEND ERROR:\n", traceback.format_exc())
             return jsonify({
@@ -134,18 +145,13 @@ def detect_ai():
                 'message': str(e)
             }), 500
 
+        # Return the API response (already formatted by TextAnalyzer)
         return jsonify({
             'success': True,
             'analysis_id': analysis_id,
-            'result': {
-                'ai_probability': prediction['ai_probability'],
-                'human_probability': prediction['human_probability'],
-                'confidence': prediction['confidence'],
-                'classification': 'AI-generated' if prediction['ai_probability'] > 0.5 else 'Human-written',
-                'text_length': len(text),
-                'source_type': source_type,
-                'filename': filename
-            },
+            'analysis_type': analysis_result['analysis_type'],
+            'result': analysis_result['result'],
+            **({'sentence_results': analysis_result['sentence_results']} if 'sentence_results' in analysis_result else {}),
             'session_id': session['session_id']
         })
         

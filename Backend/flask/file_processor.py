@@ -1,7 +1,6 @@
 import os
 import uuid
 import tempfile
-import re
 from werkzeug.utils import secure_filename
 import PyPDF2
 import docx
@@ -12,7 +11,7 @@ class FileProcessor:
     MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
     MAX_TEXT_LENGTH = 5000  
     
-    def __init__(self, upload_folder):
+    def __init__(self, upload_folder=None):
         self.upload_folder = upload_folder or tempfile.gettempdir()
         
     def allowed_file(self, filename):
