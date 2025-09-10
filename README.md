@@ -1,19 +1,20 @@
 # AI Detection API Documentation
 
-This Flask API provides AI content detection capabilities, supporting both text input and file uploads (PDF, DOCX, TXT).
+This Flask API provides AI content detection capabilities, supporting both text input and file uploads (PDF, DOCX, TXT). The API uses Redis for session management and requires API key authentication.
 
 ## Setup and Configuration
 
-### Model Path Configuration
+### Prerequisites
+- Redis server running (for session management)
+- API key configured as environment variable
+- Required Python packages (Flask, Redis, etc.)
 
-To test locally or change the model path, update the following line in `app.py`:
-
-```python
-# Line 8 in model.py
-model_path = "C:\\Model_path"
+### Environment Variables
+```bash
+export API_KEY="your-api-key-here"
+export SECRET_KEY="your-secret-key-here"
+export REDIS_URL="redis://localhost:6379/0"  # Optional, defaults to localhost
 ```
-
-Replace this path with your local model directory path.
 
 ### Starting the Server
 
@@ -21,14 +22,30 @@ Replace this path with your local model directory path.
 python app.py
 ```
 
-The server will start on `http://localhost:5000` by default.
+The server will start on `http://0.0.0.0:5000` by default.
+
+## Authentication
+
+All API endpoints (except health check) require authentication using an API key.
+
+### Methods:
+1. **Header**: `X-API-Key: your-api-key`
+2. **Query Parameter**: `?api_key=your-api-key`
+
+### Error Response (401):
+```json
+{
+    "error": "Valid API key required",
+    "message": "Use X-API-Key header or api_key query parameter"
+}
+```
 
 ## API Endpoints
 
 ### 1. Health Check
 **GET** `/api/health`
 
-Check if the API is running and get configuration information.
+Check if the API is running and get system status (no authentication required).
 
 **Response:**
 ```json
@@ -36,23 +53,29 @@ Check if the API is running and get configuration information.
     "status": "healthy",
     "timestamp": "2025-01-15T10:30:00.123456",
     "supported_formats": ["txt", "pdf", "docx"],
-    "max_file_size_mb": 5
+    "max_file_size_mb": 5.0,
+    "redis_status": "connected"
 }
 ```
 
 ---
 
-### 2. AI Detection (Single Text/File)
+### 2. AI Detection
 **POST** `/api/detect`
 
-Detect AI content in a single text or uploaded file.
+Detect AI content in text or uploaded file. Supports both single analysis and sentence-by-sentence analysis.
+
+#### Authentication Required:
+- Header: `X-API-Key: your-api-key`
+- Or query parameter: `?api_key=your-api-key`
 
 #### Input Options:
 
 **Option 1: JSON Text Input**
 ```json
 {
-    "text": "Your text content here..."
+    "text": "Your text content here...",
+    "force_single_analysis": false  // optional, defaults to false
 }
 ```
 
@@ -61,6 +84,7 @@ Detect AI content in a single text or uploaded file.
 Content-Type: application/x-www-form-urlencoded
 
 text=Your text content here...
+force_single_analysis=true  // optional
 ```
 
 **Option 3: File Upload**
@@ -68,22 +92,53 @@ text=Your text content here...
 Content-Type: multipart/form-data
 
 file: [PDF/DOCX/TXT file]
+force_single_analysis: true  // optional form field
 ```
 
-#### Response:
+#### Response (Single Analysis):
 ```json
 {
     "success": true,
     "analysis_id": "uuid-string",
+    "analysis_type": "single",
     "result": {
         "ai_probability": 0.85,
         "human_probability": 0.15,
         "confidence": 0.85,
         "classification": "AI-generated",
         "text_length": 1250,
-        "source_type": "text",  // or "file"
-        "filename": "document.pdf"  // only for file uploads
+        "source_type": "text",
+        "filename": null
     },
+    "session_id": "session-uuid"
+}
+```
+
+#### Response (Sentence Analysis):
+```json
+{
+    "success": true,
+    "analysis_id": "uuid-string",
+    "analysis_type": "sentence",
+    "result": {
+        "overall_ai_probability": 0.72,
+        "overall_human_probability": 0.28,
+        "overall_confidence": 0.72,
+        "overall_classification": "AI-generated",
+        "text_length": 1250,
+        "source_type": "file",
+        "filename": "document.pdf",
+        "sentence_count": 8
+    },
+    "sentence_results": [
+        {
+            "sentence": "First sentence text...",
+            "ai_probability": 0.65,
+            "human_probability": 0.35,
+            "confidence": 0.65,
+            "classification": "AI-generated"
+        }
+    ],
     "session_id": "session-uuid"
 }
 ```
@@ -95,70 +150,21 @@ file: [PDF/DOCX/TXT file]
 }
 ```
 
----
-
-### 3. Batch AI Detection
-**POST** `/api/batch-detect`
-
-Analyze multiple texts or files in a single request.
-
-#### Input Options:
-
-**Option 1: Multiple Files**
-```
-Content-Type: multipart/form-data
-
-files: [file1.pdf, file2.docx, file3.txt, ...]
-```
-
-**Option 2: JSON Array of Texts**
 ```json
 {
-    "texts": [
-        "First text to analyze...",
-        "Second text to analyze...",
-        "Third text to analyze..."
-    ]
+    "error": "Text must be less than 50,000 characters"
 }
 ```
 
-#### Response:
-```json
-{
-    "success": true,
-    "results": [
-        {
-            "index": 0,
-            "analysis_id": "uuid-1",
-            "filename": "document1.pdf",  // for file uploads
-            "result": {
-                "ai_probability": 0.72,
-                "human_probability": 0.28,
-                "confidence": 0.72,
-                "classification": "AI-generated",
-                "text_length": 890
-            }
-        },
-        {
-            "index": 1,
-            "error": "Text must be at least 10 characters long"
-        }
-    ],
-    "session_id": "session-uuid"
-}
-```
-
-#### Limitations:
-- Maximum 10 files/texts per batch
-- Each text must be 10-5000 characters
-- File size limit: 5MB per file
-
 ---
 
-### 4. Analysis History
+### 3. Analysis History
 **GET** `/api/history`
 
 Get the analysis history for the current session (last 20 analyses).
+
+#### Authentication Required:
+- Header: `X-API-Key: your-api-key`
 
 #### Response:
 ```json
@@ -168,15 +174,17 @@ Get the analysis history for the current session (last 20 analyses).
         {
             "id": "analysis-uuid",
             "text_preview": "First 200 characters of analyzed text...",
-            "result": {
-                "ai_probability": 0.65,
-                "human_probability": 0.35,
-                "confidence": 0.65
-            },
             "timestamp": "2025-01-15T10:30:00.123456",
             "text_length": 1200,
             "source_type": "file",
-            "filename": "document.pdf"
+            "filename": "document.pdf",
+            "analysis_type": "sentence",
+            "overall_result": {
+                "ai_probability": 0.65,
+                "human_probability": 0.35,
+                "confidence": 0.65,
+                "classification": "AI-generated"
+            }
         }
     ],
     "total_analyses": 15,
@@ -186,10 +194,13 @@ Get the analysis history for the current session (last 20 analyses).
 
 ---
 
-### 5. Get Specific Analysis
+### 4. Get Specific Analysis
 **GET** `/api/analysis/{analysis_id}`
 
 Retrieve details for a specific analysis by its ID.
+
+#### Authentication Required:
+- Header: `X-API-Key: your-api-key`
 
 #### Response:
 ```json
@@ -198,15 +209,17 @@ Retrieve details for a specific analysis by its ID.
     "analysis": {
         "id": "analysis-uuid",
         "text_preview": "First 200 characters...",
-        "result": {
-            "ai_probability": 0.78,
-            "human_probability": 0.22,
-            "confidence": 0.78
-        },
         "timestamp": "2025-01-15T10:30:00.123456",
         "text_length": 950,
         "source_type": "text",
-        "filename": null
+        "filename": null,
+        "analysis_type": "single",
+        "overall_result": {
+            "ai_probability": 0.78,
+            "human_probability": 0.22,
+            "confidence": 0.78,
+            "classification": "AI-generated"
+        }
     }
 }
 ```
@@ -220,10 +233,13 @@ Retrieve details for a specific analysis by its ID.
 
 ---
 
-### 6. Session Information
+### 5. Session Information
 **GET** `/api/session`
 
 Get information about the current session.
+
+#### Authentication Required:
+- Header: `X-API-Key: your-api-key`
 
 #### Response:
 ```json
@@ -237,10 +253,13 @@ Get information about the current session.
 
 ---
 
-### 7. Clear History
+### 6. Clear History
 **DELETE** `/api/clear-history`
 
 Clear all analysis history for the current session.
+
+#### Authentication Required:
+- Header: `X-API-Key: your-api-key`
 
 #### Response:
 ```json
@@ -256,29 +275,46 @@ Clear all analysis history for the current session.
 
 ### Supported Formats
 - **PDF** (.pdf)
-- **Word Document** (.docx)
+- **Word Document** (.docx)  
 - **Text File** (.txt)
 
 ### Limitations
-- Maximum file size: 5MB
-- Maximum text length: 5000 characters
+- Maximum file size: Configured in `FileProcessor.MAX_FILE_SIZE`
+- Maximum text length: Configured in `TextAnalyser.MAX_TEXT_LENGTH`
 - Minimum text length: 10 characters
 
 ### Text Extraction
-The API automatically extracts text from uploaded files:
-- **PDF**: Uses PyPDF2 to extract text from all pages
-- **DOCX**: Extracts text from all paragraphs
-- **TXT**: Reads file content with UTF-8 encoding (falls back to latin-1)
+The API automatically extracts text from uploaded files using the `FileProcessor` class.
 
 ---
 
 ## Session Management
 
-The API uses Flask sessions to track user activity:
-- Each user gets a unique session ID
-- Analysis history is stored per session
-- Sessions are maintained using browser cookies
-- Session data is stored in memory
+The API uses Redis for persistent session management:
+- Each user gets a unique session ID stored in Flask session cookies
+- Analysis history is stored in Redis with session-based keys
+- Sessions persist across server restarts
+- Fallback to in-memory storage if Redis is unavailable
+
+### Redis Configuration
+- Default connection: `redis://localhost:6379/0`
+- Override with `REDIS_URL` environment variable
+- Sessions expire based on Redis configuration
+
+---
+
+## Analysis Types
+
+### Single Analysis (`force_single_analysis=true`)
+- Analyzes the entire text as one unit
+- Faster processing
+- Single probability score for the whole text
+
+### Sentence Analysis (default)
+- Splits text into individual sentences
+- Analyzes each sentence separately
+- Provides both overall and per-sentence results
+- More detailed insights but slower processing
 
 ---
 
@@ -288,21 +324,25 @@ The API uses Flask sessions to track user activity:
 
 **400 Bad Request**
 - Invalid input format
-- Text too short/long
+- Text too short/long  
 - Unsupported file type
 - Missing required fields
 
+**401 Unauthorized**
+- Missing or invalid API key
+
 **404 Not Found**
 - Analysis ID not found
+- Session not found
 - Invalid endpoint
 
 **413 Payload Too Large**
-- File size exceeds 5MB limit
+- File size exceeds configured limit
 
 **500 Internal Server Error**
-- Model prediction failure
-- File processing error
-- Server configuration issues
+- Text analysis failure
+- Redis connection issues
+- File processing errors
 
 ### Error Response Format
 ```json
@@ -320,30 +360,53 @@ The API uses Flask sessions to track user activity:
 ```python
 import requests
 
+# Headers with API key
+headers = {'X-API-Key': 'your-api-key-here'}
+
 # Text analysis
 response = requests.post('http://localhost:5000/api/detect', 
+                        headers=headers,
                         json={'text': 'Your text here'})
 result = response.json()
 
-# File upload
+# File upload with sentence analysis
 with open('document.pdf', 'rb') as f:
-    response = requests.post('http://localhost:5000/api/detect', 
+    response = requests.post('http://localhost:5000/api/detect',
+                           headers=headers,
                            files={'file': f})
 result = response.json()
 
-# Batch analysis
-response = requests.post('http://localhost:5000/api/batch-detect',
-                        json={'texts': ['Text 1', 'Text 2', 'Text 3']})
-results = response.json()
+# Single analysis mode
+response = requests.post('http://localhost:5000/api/detect',
+                        headers=headers,
+                        json={
+                            'text': 'Your text here',
+                            'force_single_analysis': True
+                        })
+result = response.json()
+
+# Get history
+response = requests.get('http://localhost:5000/api/history',
+                       headers=headers)
+history = response.json()
 ```
 
 ### JavaScript Example
 ```javascript
+// Headers with API key
+const headers = {
+    'X-API-Key': 'your-api-key-here',
+    'Content-Type': 'application/json'
+};
+
 // Text analysis
 const response = await fetch('/api/detect', {
     method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({text: 'Your text here'})
+    headers: headers,
+    body: JSON.stringify({
+        text: 'Your text here',
+        force_single_analysis: false
+    })
 });
 const result = await response.json();
 
@@ -352,25 +415,41 @@ const formData = new FormData();
 formData.append('file', fileInput.files[0]);
 const response = await fetch('/api/detect', {
     method: 'POST',
+    headers: {'X-API-Key': 'your-api-key-here'},
     body: formData
 });
 const result = await response.json();
+```
+
+### cURL Example
+```bash
+# Text analysis
+curl -X POST http://localhost:5000/api/detect \
+  -H "X-API-Key: your-api-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Your text content here"}'
+
+# File upload
+curl -X POST http://localhost:5000/api/detect \
+  -H "X-API-Key: your-api-key-here" \
+  -F "file=@document.pdf"
+
+# Get history
+curl -X GET http://localhost:5000/api/history \
+  -H "X-API-Key: your-api-key-here"
 ```
 
 ---
 
 ## Development Notes
 
-### Model Integration
-The API uses the `AIDetectionModel` class from `model.py`. The model is loaded once during application startup for efficiency.
+### Dependencies
+- `FileProcessor`: Handles file upload and text extraction
+- `TextAnalyser`: Performs AI detection analysis
+- `RedisManager`: Manages Redis connections and session storage
 
-### Session Storage
-Currently uses in-memory storage. For production deployment, consider:
-- Redis for session storage (Need to learn)
-- Database for persistent analysis history
-- Proper session cleanup mechanisms (Need to implement)
-
-### Security Considerations
-- Change the secret key in production (Need to do)
-- Validate file types more strictly
-- Implement virus scanning for uploaded files (Need to do)
+### Architecture
+- Flask application with CORS enabled
+- Redis for session persistence with in-memory fallback
+- Decorator-based authentication and session management
+- Structured error handling with proper HTTP status codes
