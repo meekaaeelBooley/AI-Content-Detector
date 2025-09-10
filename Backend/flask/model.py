@@ -92,9 +92,7 @@ if __name__ == "__main__":
     # Create model instance
     detector = AIDetectionModel()
 
-    test_sentence = """Cook was clear in positioning privacy as a central pillar of Apple's AI value proposition. The private cloud compute architecture, designed to minimize the amount of user data leaving the device, is a counterpoint to competitors that require extensive cloud data processing.
-
-The CEO argued that this hybrid approach — balancing on-device AI with selective, secure server-based computing — offers "the best way for users to experience the full potential of generative AI" without sacrificing security or personal data integrity."""
+    test_sentence = """Progress in software engineering over the last 50 years has been astonishing. Our societies could not function without large professional software systems."""
 
     result = detector.predict_with_confidence(test_sentence)
     
