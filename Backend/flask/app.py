@@ -8,19 +8,12 @@ import traceback
 from file_processor import FileProcessor
 from text_analyser import TextAnalyser
 from functools import wraps
-
-# Import the Redis manager we created
 from redis_manager import redis_manager
 
-# pip install torch transformers flask flask-cors PyPDF2 python-docx werkzeug redis
-
-API_KEYS = {"jackboys25"}
+API_KEYS = {os.getenv("API_KEY")}
 
 def require_api_key(f):
-    """
-    Decorator to require API key authentication.
-    Checks for API key in headers (X-API-Key) or query parameters (api_key).
-    """
+    # Decorator to require API key authentication. Checks for API key in headers (X-API-Key) or query parameters (api_key).
     @wraps(f)
     def decorated_function(*args, **kwargs):
         # Check for API key in headers or query parameters
@@ -50,10 +43,7 @@ file_processor = FileProcessor()
 text_analyser = TextAnalyser()
 
 def ensure_session(f):
-    """
-    Decorator to ensure each request has a valid session.
-    Creates new session in Redis if it doesn't exist.
-    """
+    # Decorator to ensure each request has a valid session. Creates new session in Redis if it doesn't exist.
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'session_id' not in session:
@@ -75,7 +65,7 @@ def ensure_session(f):
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
-    """Health check endpoint with system information"""
+    # Health check endpoint with system information
     redis_status = "connected" if redis_manager.is_connected() else "disconnected"
     
     return jsonify({
@@ -96,13 +86,13 @@ def detect_ai():
         filename = None
         source_type = 'text'
         
-        # Check if it's a file upload (multipart/form-data)
+        # Check if it's a file upload 
         if 'file' in request.files:
             file = request.files['file']
             text, filename = file_processor.process_file(file)
             source_type = 'file'
         
-        # Check if it's JSON text input (application/json)
+        # Check if it's JSON text input 
         elif request.is_json:
             data = request.get_json()
             if not data or 'text' not in data:
@@ -112,7 +102,7 @@ def detect_ai():
             text = data['text'].strip()
             source_type = 'text'
         
-        # Check if it's form text input (application/x-www-form-urlencoded)
+        # Check if it's form text input
         elif 'text' in request.form:
             text = request.form['text'].strip()
             source_type = 'text'
