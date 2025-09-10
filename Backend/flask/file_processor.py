@@ -9,7 +9,6 @@ class FileProcessor:
     # handles file upload processing and text extraction
     ALLOWED_EXTENSIONS = {'txt', 'pdf', 'docx'}
     MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
-    MAX_TEXT_LENGTH = 5000  
     
     def __init__(self, upload_folder=None):
         self.upload_folder = upload_folder or tempfile.gettempdir()

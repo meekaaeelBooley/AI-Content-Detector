@@ -152,7 +152,7 @@ force_single_analysis: true  // optional form field
 
 ```json
 {
-    "error": "Text must be less than 50,000 characters"
+    "error": "Text must be less than 10,000 characters"
 }
 ```
 
@@ -279,8 +279,8 @@ Clear all analysis history for the current session.
 - **Text File** (.txt)
 
 ### Limitations
-- Maximum file size: Configured in `FileProcessor.MAX_FILE_SIZE`
-- Maximum text length: Configured in `TextAnalyser.MAX_TEXT_LENGTH`
+- Maximum file size: 5mb
+- Maximum text length: 5000 characters
 - Minimum text length: 10 characters
 
 ### Text Extraction
