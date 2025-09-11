@@ -1,7 +1,6 @@
 import redis
 import json
 import datetime
-from typing import Dict, List, Any, Optional
 import os
 
 class RedisManager:
@@ -14,58 +13,58 @@ class RedisManager:
         self.connect()
     
     def connect(self):
-        """Establish connection to Redis"""
+        """Connect to Redis server"""
         try:
+            # Create Redis connection
             self.redis_client = redis.Redis(
                 host=self.host,
                 port=self.port,
                 db=self.db,
                 password=self.password,
-                decode_responses=True  # Automatically decode responses to strings
+                decode_responses=True  # Makes responses easier to work with
             )
-            # Test connection
+            # Test if connection works
             self.redis_client.ping()
-            print("Redis connection established successfully")
+            print("Connected to Redis successfully")
         except redis.ConnectionError as e:
-            print(f"Redis connection failed: {e}")
+            print(f"Failed to connect to Redis: {e}")
             raise
     
     def is_connected(self):
-        """Check if Redis is connected"""
+        """Check if we're connected to Redis"""
         try:
             return self.redis_client.ping()
         except:
             return False
     
-    def store_session(self, session_id: str, session_data: Dict[str, Any], expire_hours: int = 24):
-        """Store session data with expiration"""
+    def store_session(self, session_id, session_data):
+        """Save session data to Redis (no expiration)"""
         try:
             key = f"session:{session_id}"
-            # Convert datetime objects to strings for JSON serialization
+            
+            # Convert datetime objects to strings so they can be stored as JSON
             if 'created_at' in session_data and isinstance(session_data['created_at'], datetime.datetime):
                 session_data['created_at'] = session_data['created_at'].isoformat()
             
-            # Convert analyses timestamps
+            # Convert timestamps in each analysis
             if 'analyses' in session_data:
                 for analysis in session_data['analyses']:
                     if 'timestamp' in analysis and isinstance(analysis['timestamp'], datetime.datetime):
                         analysis['timestamp'] = analysis['timestamp'].isoformat()
             
-            self.redis_client.setex(
-                key,
-                expire_hours * 3600,  # Convert hours to seconds
-                json.dumps(session_data)
-            )
+            # Store without expiration (stays forever until manually deleted)
+            self.redis_client.set(key, json.dumps(session_data))
             return True
         except Exception as e:
-            print(f"Error storing session: {e}")
+            print(f"Error saving session: {e}")
             return False
     
-    def get_session(self, session_id: str) -> Optional[Dict[str, Any]]:
-        """Retrieve session data"""
+    def get_session(self, session_id):
+        """Get session data from Redis"""
         try:
             key = f"session:{session_id}"
             data = self.redis_client.get(key)
+            
             if data:
                 session_data = json.loads(data)
                 
@@ -82,60 +81,67 @@ class RedisManager:
                 return session_data
             return None
         except Exception as e:
-            print(f"Error retrieving session: {e}")
+            print(f"Error getting session: {e}")
             return None
     
-    def update_session_analyses(self, session_id: str, analysis: Dict[str, Any]):
-        """Add analysis to session and update Redis"""
+    def update_session_analyses(self, session_id, analysis):
+        """Add a new analysis to an existing session"""
         try:
+            # Get current session data
             session_data = self.get_session(session_id)
+            
+            # If session doesn't exist, create a new one
             if not session_data:
-                # Create new session if it doesn't exist
                 session_data = {
                     'created_at': datetime.datetime.now(),
                     'analyses': []
                 }
             
-            # Ensure analyses list exists
+            # Make sure analyses list exists
             if 'analyses' not in session_data:
                 session_data['analyses'] = []
             
-            # Add new analysis
+            # Add the new analysis to the list
             session_data['analyses'].append(analysis)
             
-            # Store updated session
+            # Save updated session back to Redis
             return self.store_session(session_id, session_data)
         except Exception as e:
-            print(f"Error updating session analyses: {e}")
+            print(f"Error updating session: {e}")
             return False
     
-    def clear_session_analyses(self, session_id: str):
-        """Clear all analyses for a session"""
+    def clear_session_analyses(self, session_id):
+        """Remove all analyses from a session"""
         try:
             session_data = self.get_session(session_id)
             if session_data:
+                # Empty the analyses list
                 session_data['analyses'] = []
                 return self.store_session(session_id, session_data)
             return True
         except Exception as e:
-            print(f"Error clearing session analyses: {e}")
+            print(f"Error clearing analyses: {e}")
             return False
     
-    def delete_session(self, session_id: str):
-        """Delete a session"""
+    def delete_session(self, session_id):
+        """Completely remove a session from Redis"""
         try:
             key = f"session:{session_id}"
+            # Delete returns number of keys removed (1 if successful)
             return self.redis_client.delete(key) > 0
         except Exception as e:
             print(f"Error deleting session: {e}")
             return False
     
-    def get_all_sessions(self) -> List[Dict[str, Any]]:
-        """Get all sessions (for debugging/admin purposes)"""
+    def get_all_sessions(self):
+        """Get all sessions - mainly for debugging"""
         try:
             sessions = []
+            # Find all keys that start with "session:"
             keys = self.redis_client.keys("session:*")
+            
             for key in keys:
+                # Extract session ID from the key
                 session_id = key.split(":")[1]
                 session_data = self.get_session(session_id)
                 if session_data:
@@ -148,42 +154,41 @@ class RedisManager:
             print(f"Error getting all sessions: {e}")
             return []
     
-    def store_analysis_result(self, analysis_id: str, result: Dict[str, Any], expire_hours: int = 24):
-        """Store individual analysis result with expiration"""
+    def store_analysis_result(self, analysis_id, result):
+        """Store a single analysis result (no expiration)"""
         try:
             key = f"analysis:{analysis_id}"
-            self.redis_client.setex(
-                key,
-                expire_hours * 3600,
-                json.dumps(result)
-            )
+            # Store without expiration
+            self.redis_client.set(key, json.dumps(result))
             return True
         except Exception as e:
-            print(f"Error storing analysis result: {e}")
+            print(f"Error storing analysis: {e}")
             return False
     
-    def get_analysis_result(self, analysis_id: str) -> Optional[Dict[str, Any]]:
-        """Retrieve individual analysis result"""
+    def get_analysis_result(self, analysis_id):
+        """Get a single analysis result"""
         try:
             key = f"analysis:{analysis_id}"
             data = self.redis_client.get(key)
-            return json.loads(data) if data else None
+            if data:
+                return json.loads(data)
+            return None
         except Exception as e:
-            print(f"Error retrieving analysis result: {e}")
+            print(f"Error getting analysis: {e}")
             return None
 
-# Global Redis manager instance
+# Create a global instance that other files can use
 redis_manager = RedisManager()
 
-# For testing
+# Test code that runs only if this file is executed directly
 if __name__ == "__main__":
-    # Test Redis connection
+    # Test if Redis connection works
     manager = RedisManager()
     
     if manager.is_connected():
         print("Redis connection test: PASSED")
         
-        # Test session storage
+        # Create test session data
         test_session = {
             'created_at': datetime.datetime.now(),
             'analyses': [
@@ -197,11 +202,16 @@ if __name__ == "__main__":
             ]
         }
         
+        # Test storing and retrieving
         manager.store_session('test-session', test_session)
         retrieved = manager.get_session('test-session')
-        print(f"Session storage test: {'PASSED' if retrieved else 'FAILED'}")
         
-        # Clean up
+        if retrieved:
+            print("Session storage test: PASSED")
+        else:
+            print("Session storage test: FAILED")
+        
+        # Clean up test data
         manager.delete_session('test-session')
     else:
         print("Redis connection test: FAILED")
