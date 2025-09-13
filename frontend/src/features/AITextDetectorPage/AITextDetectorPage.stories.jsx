@@ -22,22 +22,4 @@ const Template = (args) => <AITextDetectorPage {...args} />;
 export const Default = Template.bind({});
 Default.args = {};
 
-// Story showing a sample score result
-export const WithScore = Template.bind({});
-WithScore.parameters = {
-  docs: {
-    description: {
-      story: 'Page showing a sample AI probability score of 75%.',
-    },
-  },
-};
 
-// Story showing processing/loading state
-export const Processing = Template.bind({});
-Processing.parameters = {
-  docs: {
-    description: {
-      story: 'Page showing the processing state when content is being analyzed.',
-    },
-  },
-};

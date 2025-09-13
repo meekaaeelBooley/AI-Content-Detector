@@ -2,103 +2,65 @@
 .ai-text-detector-page {
   display: flex;
   flex-direction: column;
-  height: 100vh; /* Full viewport height */
+  height: 100vh;
   background-color: #ffffff;
 }
 
 /* Content area below header */
 .main-content {
-  display: flex;
-  flex: 1; /* Take remaining vertical space */
+  display: flex; /* This makes Panel and content-area side by side */
+  flex: 1;
   overflow: hidden;
-  height: calc(100vh - 64px); /* Subtract header height */
 }
 
-/* Primary content container */
+/* This container should hold both text input and metric */
 .content-area {
-  display: flex;
-  flex: 1; /* Fill available space */
+  display: flex; /* This makes text input and metric side by side */
+  flex: 1;
   padding: 2rem;
-  gap: 2rem; /* Spacing between input and metric sections */
+  gap: 2rem;
+}
+
+/* Panel should have fixed width */
+.panel-container {
+  width: 200px; /* Fixed width for the panel */
+  flex-shrink: 0; /* Prevent panel from shrinking */
 }
 
 /* Text input section */
 .text-input-container {
-  flex: 2; /* 2:1 ratio with metric container */
+  flex: 2; /* 2 parts for text input */
   display: flex;
   flex-direction: column;
-  gap: 1rem; /* Spacing between title and input */
-}
-
-/* Panel title styling */
-.panel-title {
-  color: #3D2D4C; /* Dark purple */
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 600;
+  gap: 1rem;
 }
 
 /* Metric display section */
 .metric-container {
-  flex: 1; /* 1:2 ratio with text input */
+  flex: 1; /* 1 part for metric */
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1rem; /* Spacing between elements */
-  background-color: #F0F7FB; /* Light blue background */
+  gap: 1rem;
+  background-color: #F0F7FB;
   border-radius: 12px;
   padding: 1.5rem;
-}
-
-/* Metric title */
-.metric-container h3 {
-  color: #3D2D4C;
-  margin: 0;
-  font-size: 1.2rem;
-}
-
-/* Score description text */
-.metric-description {
-  text-align: center;
-  color: #3D2D4C;
-  font-size: 0.9rem;
-  max-width: 200px; /* Limit text width */
-  margin: 0;
-}
-
-/* Processing state container */
-.processing-indicator {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem; /* Spacing between spinner and text */
-}
-
-/* Loading spinner animation */
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid #F0F7FB; /* Light blue border */
-  border-top: 4px solid #8E12D5; /* Purple spinning part */
-  border-radius: 50%;
-  animation: spin 1s linear infinite; /* Continuous rotation */
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
 }
 
 /* Responsive design for mobile */
 @media (max-width: 768px) {
   .main-content {
-    height: calc(100vh - 51px); /* Adjusted for smaller mobile header */
+    flex-direction: column; /* Stack panel above content on mobile */
+  }
+  
+  .panel-container {
+    width: 100%; /* Full width panel on mobile */
   }
   
   .content-area {
-    flex-direction: column; /* Stack vertically on mobile */
-    padding: 1rem; /* Reduced padding */
+    flex-direction: column;
+    padding: 1rem;
   }
   
   .metric-container {
