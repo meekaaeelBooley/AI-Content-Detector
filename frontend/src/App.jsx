@@ -1,14 +1,18 @@
 // Main application component that serves as the root container
-import AITextDetectorPage from './features/AITextDetectorPage/AITextDetectorPage'
-import './App.css'
+import { Routes, Route } from 'react-router-dom';
+import HomePage from './features/HomePage/HomePage';
+import AITextDetectorPage from './features/AITextDetectorPage/AITextDetectorPage';
+import './App.css';
 
 function App() {
   return (
     <div className="App">
-      {/* Renders the main AI text detector page component */}
-      <AITextDetectorPage />
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/AITextDetectorPage" element={<AITextDetectorPage />} />
+      </Routes>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;

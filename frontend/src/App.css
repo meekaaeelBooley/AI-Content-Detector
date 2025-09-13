@@ -4,26 +4,3 @@
   background-color: #ffffff;
 }
 
-/* Remove all the Vite default styles and replace with: */
-#root {
-  max-width: none;
-  margin: 0;
-  padding: 0;
-  text-align: left;
-}
-
-/* Remove logo styles */
-.logo, .logo:hover, .logo.react:hover {
-  display: none;
-}
-
-/* Remove card and read-the-docs styles */
-.card, .read-the-docs {
-  display: none;
-}
-
-/* Ensure full width and height */
-html, body, #root, .App {
-  height: 100%;
-  width: 100%;
-}

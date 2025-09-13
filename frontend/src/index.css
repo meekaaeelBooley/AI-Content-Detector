@@ -1,8 +1,15 @@
 /* Global CSS reset and base styles */
+
+
+
 * {
   box-sizing: border-box; /* Include padding and border in element dimensions */
   margin: 0;
   padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
 }
 
 /* CSS custom properties for consistent theming */
@@ -20,44 +27,10 @@
 
 /* Base body styles */
 body {
-  margin: 0;
-  min-width: 320px; /* Minimum mobile width support */
-  min-height: 100vh; /* Full viewport height */
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  color: #3D2D4C;
   background-color: #ffffff;
 }
 
-/* Root container for React app */
-#root {
-  width: 100%;
-  min-height: 100vh;
-}
 
-/* Heading color consistency */
-h1, h2, h3, h4, h5, h6 {
-  color: #3D2D4C; /* Dark purple heading color */
-}
-
-/* Global button styles */
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #8E12D5; /* Primary purple button color */
-  color: white;
-  cursor: pointer;
-  transition: all 0.25s; /* Smooth transitions for interactions */
-}
-
-/* Button hover state */
-button:hover {
-  background-color: #7a0fb8; /* Darker purple on hover */
-}
-
-/* Button focus states for accessibility */
-button:focus,
-button:focus-visible {
-  outline: 4px solid #F0F7FB; /* Light blue focus ring */
-}
