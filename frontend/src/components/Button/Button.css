@@ -5,7 +5,7 @@
   border: none;
   border-radius: 100px; /* Fully rounded pill shape */
   padding: 12px 24px;
-  font-size: 16px;
+  font-size: 25px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease-in-out; /* Smooth transitions for all properties */
@@ -15,7 +15,7 @@
 /* Hover state - slightly darker purple with lift effect */
 .custom-button:hover {
   background-color: #7a0fbb;
-  transform: translateY(-1px); /* Subtle lift on hover */
+  transform: translateY(-1px); /* Subtle up lift on hover */
 }
 
 /* Active and clicked states - invert colors with border */
