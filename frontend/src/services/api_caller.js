@@ -35,7 +35,7 @@ apiClient.interceptors.response.use(function(response) {
   return Promise.reject(error);
 });
 
-// API functions - kept simple
+// API functions
 export const apiService = {
   // Health check
   healthCheck: function() {
@@ -98,7 +98,7 @@ export const apiService = {
 
 };
 
-// Simple error handler
+// error handler
 export const handleApiError = function(error) {
   if (error.response) {
     // Server gave us an error response
