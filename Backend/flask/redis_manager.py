@@ -1,7 +1,6 @@
 import redis
 import json
 import datetime
-import os
 
 class RedisManager:
     def __init__(self, host='localhost', port=6379, db=0, password=None):
