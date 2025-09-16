@@ -195,7 +195,7 @@ def detect_ai():
         # Build session storage data
         session_analysis = {
             'id': analysis_id,
-            'text_preview': text[:200] + ('...' if len(text) > 200 else ''),
+            'text_preview': text,
             'timestamp': datetime.datetime.now(),
             'text_length': len(text),
             'source_type': source_type,
