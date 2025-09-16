@@ -2,7 +2,6 @@ import redis
 import json
 import datetime
 from typing import Dict, List, Any, Optional
-import os
 
 class RedisManager:
     def __init__(self, host='localhost', port=6379, db=0, password=None):
@@ -37,7 +36,7 @@ class RedisManager:
         except:
             return False
     
-    def store_session(self, session_id: str, session_data: Dict[str, Any], expire_hours: int = 24):
+    def store_session(self, session_id: str, session_data: Dict[str, Any], expire_hours: int = 8):
         """Store session data with expiration"""
         try:
             key = f"session:{session_id}"
