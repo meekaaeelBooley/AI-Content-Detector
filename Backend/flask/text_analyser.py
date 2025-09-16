@@ -5,8 +5,8 @@ from model import AIDetectionModel
 class TextAnalyser:
     # Handles text analysis including sentence splitting and AI detection
     
-    MIN_SENTENCE_LENGTH = 10
-    MAX_TEXT_LENGTH = 5000
+    MIN_SENTENCE_LENGTH = 30
+    MAX_TEXT_LENGTH = 15000
     
     def __init__(self):
         self.model = AIDetectionModel()
@@ -122,7 +122,7 @@ class TextAnalyser:
                 
                 results.append({
                     'index': idx,
-                    'sentence_preview': sentence[:100] + ('...' if len(sentence) > 100 else ''),
+                    'sentence': sentence,
                     'sentence_length': len(sentence),
                     'result': {
                         'ai_probability': prediction['ai_probability'],
