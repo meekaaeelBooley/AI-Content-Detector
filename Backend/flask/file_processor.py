@@ -5,7 +5,6 @@ import stat
 import magic
 import mimetypes
 from typing import Dict, Set, Tuple, Optional, Iterator
-from werkzeug.utils import secure_filename
 import PyPDF2
 import docx
 import re
