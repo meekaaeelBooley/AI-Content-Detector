@@ -10,7 +10,16 @@ from text_analyser import TextAnalyser
 from functools import wraps
 from redis_manager import redis_manager
 
-API_KEYS = {os.getenv("API_KEY")}
+# Custom exceptions for file processing
+class SecurityError(Exception):
+    """Raised when file security validation fails"""
+    pass
+
+class ProcessingTimeoutError(Exception):
+    """Raised when file processing times out"""
+    pass
+
+API_KEYS = {"jackboys25"}  # Should be a set for membership testing
 
 def require_api_key(f):
     # Decorator to require API key authentication. Checks for API key in headers (X-API-Key) or query parameters (api_key).
@@ -52,13 +61,13 @@ def ensure_session(f):
         
         # Check if session exists in Redis, create if not
         # This replaces the in-memory session_data dictionary
-        session_data = redis_manager.get_session(sid)
-        if not session_data:
-            session_data = {
+        session_data_redis = redis_manager.get_session(sid)
+        if not session_data_redis:
+            session_data_redis = {
                 'created_at': datetime.datetime.now(),
                 'analyses': []
             }
-            redis_manager.store_session(sid, session_data)
+            redis_manager.store_session(sid, session_data_redis)
         
         return f(*args, **kwargs)
     return decorated_function
@@ -89,8 +98,36 @@ def detect_ai():
         # Check if it's a file upload 
         if 'file' in request.files:
             file = request.files['file']
-            text, filename = file_processor.process_file(file)
-            source_type = 'file'
+            try:
+                text, filename = file_processor.process_file(file)
+                source_type = 'file'
+            except ValueError as e:
+                # Convert ValueError from file_processor to appropriate error type
+                error_msg = str(e).lower()
+                if 'security' in error_msg or 'malicious' in error_msg or 'signature' in error_msg:
+                    return jsonify({
+                        'error': 'File security validation failed',
+                        'message': str(e),
+                        'type': 'security error'
+                    }), 400
+                elif 'timeout' in error_msg or 'timed out' in error_msg:
+                    return jsonify({
+                        'error': 'File processing timed out',
+                        'message': str(e),
+                        'type': 'timeout error'
+                    }), 400
+                else:
+                    return jsonify({
+                        'error': 'File processing failed',
+                        'message': str(e),
+                        'type': 'processing error'
+                    }), 400
+            except Exception as e:
+                return jsonify({
+                    'error': 'File processing failed',
+                    'message': str(e),
+                    'type': 'processing error'
+                }), 400
         
         # Check if it's JSON text input 
         elif request.is_json:
@@ -174,6 +211,8 @@ def detect_ai():
             else:
                 # Fallback to in-memory storage if Redis fails
                 print("Redis storage failed, falling back to in-memory session storage")
+                if session['session_id'] not in session_data:
+                    session_data[session['session_id']] = {'analyses': []}
                 session_data[session['session_id']]['analyses'].append(session_analysis)
                 print(f"{analysis_result['analysis_type']} analysis stored in session (fallback)")
                 
@@ -193,12 +232,13 @@ def detect_ai():
             **({'sentence_results': analysis_result['sentence_results']} if 'sentence_results' in analysis_result else {}),
             'session_id': session['session_id']
         })
-        
     except ValueError as e:
         return jsonify({
             'error': str(e)
         }), 400
     except Exception as e:
+        print("MAIN ERROR TRACEBACK:")
+        print(traceback.format_exc())
         return jsonify({
             'error': 'Internal server error',
             'message': str(e)
@@ -211,10 +251,10 @@ def get_history():
     # Get analysis history for current session
     try:
         session_id = session['session_id']
-        session_data = redis_manager.get_session(session_id)
+        session_data_redis = redis_manager.get_session(session_id)
         
         # Handle case where session doesn't exist in Redis (shouldn't happen with ensure_session)
-        if not session_data:
+        if not session_data_redis:
             return jsonify({
                 'success': True,
                 'analyses': [],
@@ -222,7 +262,7 @@ def get_history():
                 'session_id': session_id
             })
         
-        analyses = session_data.get('analyses', [])
+        analyses = session_data_redis.get('analyses', [])
         
         # Return last 20 analyses to prevent large responses
         recent_analyses = analyses[-20:] if len(analyses) > 20 else analyses
@@ -235,6 +275,8 @@ def get_history():
         })
         
     except Exception as e:
+        print("HISTORY ERROR TRACEBACK:")
+        print(traceback.format_exc())
         return jsonify({
             'error': 'Internal server error',
             'message': str(e)
@@ -247,14 +289,14 @@ def get_analysis(analysis_id):
     # Get specific analysis by ID
     try:
         session_id = session['session_id']
-        session_data = redis_manager.get_session(session_id)
+        session_data_redis = redis_manager.get_session(session_id)
         
-        if not session_data:
+        if not session_data_redis:
             return jsonify({
                 'error': 'Session not found'
             }), 404
         
-        analyses = session_data.get('analyses', [])
+        analyses = session_data_redis.get('analyses', [])
         analysis = next((a for a in analyses if a['id'] == analysis_id), None)
         
         if not analysis:
@@ -268,6 +310,8 @@ def get_analysis(analysis_id):
         })
         
     except Exception as e:
+        print("GET ANALYSIS ERROR TRACEBACK:")
+        print(traceback.format_exc())
         return jsonify({
             'error': 'Internal server error',
             'message': str(e)
@@ -280,9 +324,9 @@ def get_session_info():
     # Get current session information
     try:
         session_id = session['session_id']
-        session_data = redis_manager.get_session(session_id)
+        session_data_redis = redis_manager.get_session(session_id)
         
-        if not session_data:
+        if not session_data_redis:
             return jsonify({
                 'error': 'Session not found'
             }), 404
@@ -290,11 +334,13 @@ def get_session_info():
         return jsonify({
             'success': True,
             'session_id': session_id,
-            'created_at': session_data.get('created_at', '').isoformat() if session_data.get('created_at') else None,
-            'total_analyses': len(session_data.get('analyses', []))
+            'created_at': session_data_redis.get('created_at', '').isoformat() if session_data_redis.get('created_at') else None,
+            'total_analyses': len(session_data_redis.get('analyses', []))
         })
         
     except Exception as e:
+        print("SESSION INFO ERROR TRACEBACK:")
+        print(traceback.format_exc())
         return jsonify({
             'error': 'Internal server error',
             'message': str(e)
@@ -318,11 +364,29 @@ def clear_history():
         })
         
     except Exception as e:
+        print("CLEAR HISTORY ERROR TRACEBACK:")
+        print(traceback.format_exc())
         return jsonify({
             'error': 'Internal server error',
             'message': str(e)
         }), 500
+        
+@app.errorhandler(SecurityError)
+def security_error(error):
+    return jsonify({
+        'error': 'Security validation failed',
+        'message': str(error),
+        'type': 'security_error'
+    }), 400
 
+@app.errorhandler(ProcessingTimeoutError)
+def timeout_error(error):
+    return jsonify({
+        'error': 'Processing timeout',
+        'message': str(error),
+        'type': 'timeout_error'
+    }), 400
+    
 @app.errorhandler(413)
 def too_large(e):
     return jsonify({
