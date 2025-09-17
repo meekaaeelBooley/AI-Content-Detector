@@ -9,7 +9,13 @@ class RedisManager:
         self.db = db
         self.password = password
         self.redis_client = None
-        self.connect()
+        self.connected = False
+        try:
+            self.connect()
+            self.connected = True
+        except:
+            print("Redis connection failed - using fallback storage")
+            self.connected = False
     
     def connect(self):
         """Connect to Redis server"""
