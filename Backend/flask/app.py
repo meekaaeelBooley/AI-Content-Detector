@@ -40,10 +40,21 @@ def require_api_key(f):
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here')  # Change in production
-CORS(app)
 
 app.config['UPLOAD_FOLDER'] = FileProcessor().upload_folder
 app.config['MAX_CONTENT_LENGTH'] = FileProcessor.MAX_FILE_SIZE
+
+app.config.update(
+    SESSION_COOKIE_SECURE=True,    # Required for SameSite=None
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE='None',  # Allow cross-site cookies
+)
+
+CORS(app, 
+     supports_credentials=True,
+     origins=["http://localhost:5173"],
+     allow_headers=["Content-Type", "X-API-Key"],
+     methods=["GET", "POST", "DELETE", "OPTIONS"])
 
 # In-memory session data as a fallback if Redis is unavailable
 session_data = {}
@@ -203,6 +214,16 @@ def detect_ai():
             **analysis_result['session_data']  # Merge in the analysis-specific data
         }
 
+        print(f"=== SESSION DEBUG ===")
+        print(f"Session ID: {session['session_id']}")
+        print(f"Analysis stored with ID: {analysis_id}")
+        session_data_redis = redis_manager.get_session(session['session_id'])
+        if session_data_redis:
+                print(f"Analyses in Redis: {len(session_data_redis.get('analyses', []))}")
+        else:
+                print("No session data found in Redis")
+                print("=====================")
+
         # Store analysis in Redis instead of in-memory session_data
         try:
             # Primary storage: Redis
@@ -243,6 +264,8 @@ def detect_ai():
             'error': 'Internal server error',
             'message': str(e)
         }), 500
+
+        
 
 @app.route('/api/history', methods=['GET'])
 @require_api_key
