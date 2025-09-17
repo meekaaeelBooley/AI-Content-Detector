@@ -2,6 +2,7 @@
 import { Routes, Route } from 'react-router-dom';
 import HomePage from './features/HomePage/HomePage';
 import AITextDetectorPage from './features/AITextDetectorPage/AITextDetectorPage';
+import HistoryPage from './features/HistoryPage/HistoryPage';
 import './App.css';
 
 function App() {
@@ -10,6 +11,7 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/AITextDetectorPage" element={<AITextDetectorPage />} />
+        <Route path="/HistoryPage" element={<HistoryPage />} /> 
       </Routes>
     </div>
   );
