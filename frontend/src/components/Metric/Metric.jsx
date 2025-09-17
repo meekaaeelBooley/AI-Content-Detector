@@ -1,7 +1,12 @@
 import React from "react";
 
 // Circular progress indicator component showing a percentage
-const Metric = ({ percentage = 0, size = 120, strokeWidth = 12 }) => {
+const Metric = ({ 
+  percentage = 0, 
+  size = 120, 
+  strokeWidth = 12,
+  strokeColor = "#3D2D4C" // Default dark purple
+}) => {
   // Calculate circle geometry based on props
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -31,7 +36,7 @@ const Metric = ({ percentage = 0, size = 120, strokeWidth = 12 }) => {
         />
         {/* Progress circle - shows the actual percentage */}
         <circle
-          stroke="#3D2D4C" // Dark purple progress indicator
+          stroke={strokeColor} // Customizable stroke color
           fill="transparent"
           strokeWidth={strokeWidth}
           strokeLinecap="round" // Rounded line ends
