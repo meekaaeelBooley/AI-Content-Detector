@@ -1,8 +1,7 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://16.171.92.37:5000/api';
-
-// const API_BASE_URL = 'http://127.0.0.1:5000/api';
+// const API_BASE_URL = 'http://16.171.92.37:5000/api';
+const API_BASE_URL = 'http://127.0.0.1:5000/api';
 // For development with local backend, use: 'http://127.0.0.1:5000/api'
 
 const API_KEY = import.meta.env.REACT_APP_API_KEY || 'jackboys25';
@@ -14,7 +13,9 @@ const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
     'X-API-Key': API_KEY
-  }
+  },
+  withCredentials: true,
+  crossDomain: true
 });
 
 // Simple request logger
@@ -94,8 +95,6 @@ export const apiService = {
   clearHistory: function() {
     return apiClient.delete('/clear-history');
   },
-  
-
 };
 
 // error handler
