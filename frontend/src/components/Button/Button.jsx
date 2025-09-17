@@ -1,25 +1,52 @@
 import React, { useState } from 'react';
 import './Button.css';
 
-// Reusable button component with click animation feedback
-const Button = ({ children, onClick, ...props }) => {
-  // State to track if button is currently clicked for visual feedback
+const Button = ({ 
+  children, 
+  onClick, 
+  variant = 'primary',
+  size = 'medium',
+  borderRadius = '100px',
+  color,
+  backgroundColor,
+  disabled = false,
+  ...props 
+}) => {
   const [isClicked, setIsClicked] = useState(false);
 
-  // Enhanced click handler that triggers visual feedback
   const handleClick = (e) => {
+    if (disabled) return;
+    
     setIsClicked(true);
-    setTimeout(() => setIsClicked(false), 150); // Brief animation duration
-    if (onClick) onClick(e); // Propagate original onClick event
+    setTimeout(() => setIsClicked(false), 150);
+    if (onClick) onClick(e);
+  };
+
+  // Determine button classes based on props
+  const buttonClasses = [
+    'custom-button',
+    variant,
+    size,
+    isClicked ? 'clicked' : '',
+    disabled ? 'disabled' : ''
+  ].filter(Boolean).join(' ');
+
+  // Custom styles based on props
+  const customStyles = {
+    borderRadius: borderRadius,
+    ...(color && { color }),
+    ...(backgroundColor && { backgroundColor })
   };
 
   return (
     <button
-      className={`custom-button ${isClicked ? 'clicked' : ''}`} // Apply clicked class during animation
+      className={buttonClasses}
+      style={customStyles}
       onClick={handleClick}
-      {...props} // Pass through any additional props (disabled, type, etc.)
+      disabled={disabled}
+      {...props}
     >
-      {children} {/* Render button content */}
+      {children}
     </button>
   );
 };

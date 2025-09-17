@@ -1,44 +1,85 @@
 import Button from './Button';
 
-// Storybook configuration for Button component
 export default {
-  title: 'Components/Button', // Storybook navigation path
+  title: 'Components/Button',
   component: Button,
   parameters: {
-    layout: 'centered', // Center the component in the canvas
+    layout: 'centered',
   },
-  tags: ['autodocs'], // Enable automatic documentation generation
+  tags: ['autodocs'],
   argTypes: {
-    // Define control types and descriptions for Storybook controls
-    onClick: { action: 'clicked' }, // Action logger for click events
+    onClick: { action: 'clicked' },
     children: {
-      control: 'text', // Text input control for button content
+      control: 'text',
       description: 'Button text content',
     },
     disabled: {
-      control: 'boolean', // Toggle control for disabled state
+      control: 'boolean',
       description: 'Disable the button',
+    },
+    variant: {
+      control: 'select',
+      options: ['primary', 'secondary', 'success', 'danger'],
+      description: 'Button color variant',
+    },
+    size: {
+      control: 'select',
+      options: ['small', 'medium', 'large'],
+      description: 'Button size',
+    },
+    borderRadius: {
+      control: 'text',
+      description: 'Border radius in any CSS unit (px, %, etc)',
+    },
+    color: {
+      control: 'color',
+      description: 'Custom text color',
+    },
+    backgroundColor: {
+      control: 'color',
+      description: 'Custom background color',
     },
   },
 };
 
-// Default button story with basic configuration
+// Default button story
 export const Primary = {
   args: {
     children: 'Click me',
     disabled: false,
+    variant: 'primary',
+    size: 'medium',
   },
 };
 
-// Secondary variant story
+// Secondary variant
 export const Secondary = {
   args: {
     children: 'Secondary Button',
-    disabled: false,
+    variant: 'secondary',
+    size: 'medium',
   },
 };
 
-// Disabled state demonstration
+// Success variant
+export const Success = {
+  args: {
+    children: 'Success Button',
+    variant: 'success',
+    size: 'medium',
+  },
+};
+
+// Danger variant
+export const Danger = {
+  args: {
+    children: 'Danger Button',
+    variant: 'danger',
+    size: 'medium',
+  },
+};
+
+// Disabled state
 export const Disabled = {
   args: {
     children: 'Disabled Button',
@@ -46,10 +87,35 @@ export const Disabled = {
   },
 };
 
-// Story showing custom text content
-export const WithCustomText = {
+// Different sizes
+export const Small = {
   args: {
-    children: 'Custom Button Text',
-    disabled: false,
+    children: 'Small Button',
+    size: 'small',
+  },
+};
+
+export const Large = {
+  args: {
+    children: 'Large Button',
+    size: 'large',
+  },
+};
+
+// Custom border radius
+export const Rounded = {
+  args: {
+    children: 'Rounded Button',
+    borderRadius: '10px',
+  },
+};
+
+// Fully customizable
+export const Custom = {
+  args: {
+    children: 'Custom Button',
+    borderRadius: '8px',
+    color: '#ffffff',
+    backgroundColor: '#ff5500',
   },
 };

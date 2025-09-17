@@ -1,36 +1,108 @@
-/* Custom button styles with purple theme and interactive states */
+/* Base button style */
 .custom-button {
-  background-color: #8E12D5; /* Primary purple color */
   color: white;
   border: none;
-  border-radius: 100px; /* Fully rounded pill shape */
   padding: 12px 24px;
-  font-size: 25px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease-in-out; /* Smooth transitions for all properties */
-  outline: none; /* Remove default focus outline */
+  transition: all 0.2s ease-in-out;
+  outline: none;
+  display: inline-block;
+  text-align: center;
+  font-family: inherit;
 }
 
-/* Hover state - slightly darker purple with lift effect */
-.custom-button:hover {
+/* Size variants */
+.small {
+  font-size: 14px;
+  padding: 8px 16px;
+}
+
+.medium {
+  font-size: 16px;
+  padding: 12px 24px;
+}
+
+.large {
+  font-size: 20px;
+  padding: 16px 32px;
+}
+
+/* Color variants */
+.primary {
+  background-color: #8E12D5;
+}
+
+.secondary {
+  background-color: #6c757d;
+}
+
+.success {
+  background-color: #28a745;
+}
+
+.danger {
+  background-color: #dc3545;
+}
+
+/* Hover effects */
+.custom-button:hover:not(.disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.primary:hover:not(.disabled) {
   background-color: #7a0fbb;
-  transform: translateY(-1px); /* Subtle up lift on hover */
 }
 
-/* Active and clicked states - invert colors with border */
-.custom-button:active,
-.custom-button.clicked {
+.secondary:hover:not(.disabled) {
+  background-color: #5a6268;
+}
+
+.success:hover:not(.disabled) {
+  background-color: #218838;
+}
+
+.danger:hover:not(.disabled) {
+  background-color: #c82333;
+}
+
+/* Active and clicked states */
+.custom-button:active:not(.disabled),
+.custom-button.clicked:not(.disabled) {
   background-color: white;
-  color: #8E12D5;
-  border: 2px solid #8E12D5; /* Purple border when active */
-  transform: translateY(0); /* Reset lift effect */
+  border: 2px solid;
+  transform: translateY(0);
 }
 
-/* Disabled state - grayed out with no interactions */
-.custom-button:disabled {
+.primary:active:not(.disabled),
+.primary.clicked:not(.disabled) {
+  color: #8E12D5;
+  border-color: #8E12D5;
+}
+
+.secondary:active:not(.disabled),
+.secondary.clicked:not(.disabled) {
+  color: #6c757d;
+  border-color: #6c757d;
+}
+
+.success:active:not(.disabled),
+.success.clicked:not(.disabled) {
+  color: #28a745;
+  border-color: #28a745;
+}
+
+.danger:active:not(.disabled),
+.danger.clicked:not(.disabled) {
+  color: #dc3545;
+  border-color: #dc3545;
+}
+
+/* Disabled state */
+.custom-button.disabled {
   background-color: #cccccc;
   color: #666666;
-  cursor: not-allowed; /* Show disabled cursor */
-  transform: none; /* Remove any transform effects */
+  cursor: not-allowed;
+  transform: none;
 }
