@@ -5,7 +5,7 @@ import { MdAttachFile, MdArrowUpward } from "react-icons/md";
 // Text input component with character counter, file attachment, and submit functionality
 const TextInput = ({ onSubmit, onFileAttach }) => {
   const [text, setText] = useState("");
-  const maxChars = 1000; // Maximum allowed characters
+  const maxChars = 100000; // Maximum allowed characters
 
   const handleChange = (e) => setText(e.target.value);
 
