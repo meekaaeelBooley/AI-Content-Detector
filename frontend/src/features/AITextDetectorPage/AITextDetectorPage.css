@@ -8,63 +8,238 @@
 
 /* Content area below header */
 .main-content {
-  display: flex; /* This makes Panel and content-area side by side */
+  display: flex;
   flex: 1;
   overflow: hidden;
+  min-height: 0; 
+}
+
+/* Panel container */
+.panel-container {
+  width: 200px;
+  flex-shrink: 0;
+  background-color: #f8f9fa;
+  border-right: 1px solid #e0e0e0;
 }
 
 /* This container should hold both text input and metric */
 .content-area {
-  display: flex; /* This makes text input and metric side by side */
+  display: flex;
   flex: 1;
   padding: 2rem;
   gap: 2rem;
-}
-
-/* Panel should have fixed width */
-.panel-container {
-  width: 200px; /* Fixed width for the panel */
-  flex-shrink: 0; /* Prevent panel from shrinking */
+  min-height: 0;
+  height: 100%;
+  align-items: flex-start;
+  overflow: auto; /* Allow scrolling if needed */
 }
 
 /* Text input section */
 .text-input-container {
-  flex: 2; /* 2 parts for text input */
+  flex: 2;
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  min-height: 0;
+  height: 100%;
 }
 
-/* Metric display section */
+/* TextInput component wrapper */
+.text-input-container > div:last-child {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-title {
+  margin: 0 0 1rem 0;
+  color: #3D2D4C;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+/* Metric display section - FIXED CONTAINER */
 .metric-container {
-  flex: 1; /* 1 part for metric */
+  flex: 1;
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  background-color: #f8f8f8;
+  border-radius: 12px;
+  padding: 1.5rem;
+  min-height: 400px;
+  align-self: stretch;
+  margin-top: 3rem;
+  overflow: auto; /* Allow scrolling if needed */
+  box-sizing: border-box;
+  position: relative;
+  z-index: 1;
+  
+  /* Ensure visibility */
+  border: 1px solid #e0e0e0;
+  opacity: 1 !important;
+  visibility: visible !important;
+  max-width: 280px;
+}
+
+.metric-container h3 {
+  color: #3D2D4C;
+  font-size: 1.5rem;
+  margin: 0 0 1rem 0;
+  flex-shrink: 0; /* Prevent title from shrinking */
+}
+
+/* Vertically stacked metrics - FIXED SIZING */
+.metrics-stack {
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  width: 100%;
+  overflow: visible;
+  justify-content: flex-start;
+  opacity: 1 !important;
+  visibility: visible !important;
+  position: relative;
+}
+
+.metric-item {
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  min-width: 180px; /* Accommodate 120px metric + padding */
+  max-width: 200px; /* Tighter constraint */
+  flex-shrink: 0;
+  
+  padding: 1rem;
+  background-color: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  box-sizing: border-box;
+  opacity: 1 !important;
+  visibility: visible !important;
+  position: relative;
+}
+
+.metric-item h4 {
+  margin: 0;
+  color: #3D2D4C;
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-align: center;
+  flex-shrink: 0;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.metric-description {
+  text-align: center;
+  color: #666;
+  font-size: 0.85rem; /* Slightly smaller */
+  margin: 0;
+  max-width: 160px; /* Smaller to fit container */
+  line-height: 1.3;
+  word-wrap: break-word;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Ensure the Metric component itself doesn't overflow */
+.metric-item > div:first-of-type {
+  flex-shrink: 0; /* Don't let the metric circle shrink */
+  max-width: 120px; /* Match the component's default size */
+  max-height: 120px;
+}
+
+/* Force visibility for all metric-related elements */
+.metric-container,
+.metric-container h3,
+.metrics-stack,
+.metric-item,
+.metric-item h4,
+.metric-description {
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: flex !important;
+}
+
+.metric-container h3 {
+  display: block !important;
+}
+
+.analysis-details {
+  margin-top: 1rem;
+  font-size: 0.8rem;
+  text-align: center;
+  color: #666;
+  width: 100%;
+  max-width: 250px;
+  padding: 1rem;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  box-sizing: border-box;
+  word-wrap: break-word;
+}
+
+.analysis-details p {
+  margin: 0.25rem 0;
+  word-break: break-all; /* Break long IDs if needed */
+}
+
+.error-message {
+  background-color: #ffe6e6;
+  color: #d63031;
+  padding: 1rem;
+  border-radius: 4px;
+  border-left: 4px solid #d63031;
+  margin-top: 1rem;
+}
+
+.processing-indicator {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   gap: 1rem;
-  background-color: #F0F7FB;
-  border-radius: 12px;
-  padding: 1.5rem;
+  flex: 1;
+  justify-content: center;
 }
 
-/* Responsive design for mobile */
-@media (max-width: 768px) {
-  .main-content {
-    flex-direction: column; /* Stack panel above content on mobile */
-  }
-  
-  .panel-container {
-    width: 100%; /* Full width panel on mobile */
-  }
-  
-  .content-area {
-    flex-direction: column;
-    padding: 1rem;
-  }
-  
-  .metric-container {
-    order: -1; /* Move metric above input on mobile */
-    margin-bottom: 1rem;
-  }
+.processing-indicator .spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #8E12D5;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  flex-shrink: 0;
+}
+
+.analysis-details {
+  margin-top: 1rem;
+  font-size: 0.8rem;
+  text-align: center;
+  color: #666;
+  width: 100%;
+  max-width: 250px;
+  padding: 1rem;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  box-sizing: border-box;
+  word-wrap: break-word;
+}
+
+.analysis-details p {
+  margin: 0.25rem 0;
+  word-break: break-all;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
