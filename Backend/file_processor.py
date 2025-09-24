@@ -218,7 +218,7 @@ class SecureTempFile:
 class FileProcessor:
     # handles file upload processing and text extraction
     ALLOWED_EXTENSIONS = {'txt', 'pdf', 'docx'}
-    MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+    MAX_FILE_SIZE = 500 * 1024  # 500KB
     VALIDATION_TIMEOUT = 30  # 30 seconds timeout for validation
     
     def __init__(self, upload_folder=None):

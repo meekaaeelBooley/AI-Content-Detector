@@ -92,7 +92,8 @@ def health_check():
         'status': 'healthy',
         'timestamp': datetime.datetime.now().isoformat(),
         'supported_formats': list(FileProcessor.ALLOWED_EXTENSIONS),
-        'max_file_size_mb': FileProcessor.MAX_FILE_SIZE / (1024 * 1024),
+        'max_file_size_kb': FileProcessor.MAX_FILE_SIZE / 1024,  # KB
+        'max_text_length': TextAnalyser.MAX_TEXT_LENGTH,  # Add text length info
         'redis_status': redis_status
     })
 
@@ -105,6 +106,7 @@ def detect_ai():
         text = None
         filename = None
         source_type = 'text'
+        is_file_upload = False
         
         # Check if it's a file upload 
         if 'file' in request.files:
@@ -112,6 +114,7 @@ def detect_ai():
             try:
                 text, filename = file_processor.process_file(file)
                 source_type = 'file'
+                is_file_upload = True  # Mark this as a file upload
             except ValueError as e:
                 # Convert ValueError from file_processor to appropriate error type
                 error_msg = str(e).lower()
@@ -165,15 +168,25 @@ def detect_ai():
                 'error': 'No text content found'
             }), 400
         
-        if len(text) < 10:
-            return jsonify({
-                'error': 'Text must be at least 10 characters long'
-            }), 400
+        # Apply different validation rules for files vs text input
+        if is_file_upload:
+            # For file uploads, use more lenient validation
+            if len(text) < 10:
+                return jsonify({
+                    'error': 'Extracted text must be at least 10 characters long'
+                }), 400
+            # No upper character limit for file uploads (already limited by file size)
+        else:
+            # For direct text input, apply the original character limits
+            if len(text) < 10:
+                return jsonify({
+                    'error': 'Text must be at least 10 characters long'
+                }), 400
 
-        if len(text) > text_analyser.MAX_TEXT_LENGTH:
-            return jsonify({
-                'error': f'Text must be less than {text_analyser.MAX_TEXT_LENGTH:,} characters'
-            }), 400
+            if len(text) > text_analyser.MAX_TEXT_LENGTH:
+                return jsonify({
+                    'error': f'Text must be less than {text_analyser.MAX_TEXT_LENGTH:,} characters'
+                }), 400
 
         # Check for force_single_analysis flag
         force_single_analysis = False
@@ -188,7 +201,8 @@ def detect_ai():
                 text, 
                 source_type=source_type, 
                 filename=filename, 
-                force_single_analysis=force_single_analysis
+                force_single_analysis=force_single_analysis,
+                is_file_upload=is_file_upload  # Add this parameter
             )
         except ValueError as e:
             return jsonify({'error': str(e)}), 400
@@ -206,7 +220,7 @@ def detect_ai():
         # Build session storage data
         session_analysis = {
             'id': analysis_id,
-            'text_preview': text[:200] + ('...' if len(text) > 200 else ''),
+            'text_preview': 'text',
             'timestamp': datetime.datetime.now(),
             'text_length': len(text),
             'source_type': source_type,
@@ -440,4 +454,4 @@ if __name__ == '__main__':
     if not redis_manager.is_connected():
         print("WARNING: Redis connection failed. Sessions will not be persisted.")
     
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5000) # False for production...

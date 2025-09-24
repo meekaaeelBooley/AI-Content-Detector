@@ -20,3 +20,7 @@ pip install redis
 
 ....when in wsl and app.py missing packages, install bulk using:
 pip install torch transformers flask flask-cors PyPDF2 python-docx werkzeug redis
+
+
+
+

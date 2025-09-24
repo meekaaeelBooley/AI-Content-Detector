@@ -10,7 +10,7 @@ class AIDetectionModel:
         # self.model_path = "/home/ubuntu/aicd-backend/ai_detector_model"
 
         # This path is for when the model is located on our machines.
-        self.model_path = "C:\\Users\\mubas\\OneDrive\\Desktop\\CSC 3003S\\Capstone\\checkpoint-4250"
+        self.model_path = "./ai_detector_model"
 
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_path)
         self.model = AutoModelForSequenceClassification.from_pretrained(self.model_path)

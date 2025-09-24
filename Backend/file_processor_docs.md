@@ -346,6 +346,8 @@ from contextlib import contextmanager
 ### Installation
 ```bash
 pip install PyPDF2 python-docx python-magic werkzeug
+In wsl:
+sudo apt install python3-magic
 ```
 
 ## Performance Considerations

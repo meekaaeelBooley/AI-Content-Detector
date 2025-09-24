@@ -11,7 +11,7 @@ class TextAnalyser:
     # Handles text analysis including sentence splitting and AI detection
     
     MIN_SENTENCE_LENGTH = 30
-    MAX_TEXT_LENGTH = 15000
+    MAX_TEXT_LENGTH = 100000
     
     MAX_UNICODE_CHAR = 1000  # Maximum valid Unicode code point
     BLOCKED_PATTERNS = [
@@ -62,21 +62,30 @@ class TextAnalyser:
             raise SecurityError('Multiple suspicious keywords detected in text')
         
     def validate_unicode_safety(self, text):
-        # Check for unusual Unicode characters that might be used in attacks.
+    # Check for unusual Unicode characters that might be used in attacks.
         unicode_count = 0
         
         for char in text:
-            # Check for control characters
-            if unicodedata.category(char).startswith('C') and char not in ('\n', '\r', '\t'):
-                raise SecurityError('Control characters detected in text')
-            
-            # Count Unicode characters
+            # Check for control characters ...be more specific about which ones to block
+            category = unicodedata.category(char)
+            if category.startswith('C'):
+                # Allow common whitespace control characters
+                if char in ('\n', '\r', '\t', ' ', '\f', '\v'):
+                    continue
+                # Allow other harmless control characters that might appear in file extracts
+                if category in ['Cc', 'Cf'] and ord(char) < 32:
+                    # Block only potentially dangerous control characters
+                    if ord(char) in [0x00, 0x08, 0x0B, 0x0C, 0x0E, 0x0F, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F]:
+                        raise SecurityError(f'Dangerous control character detected: U+{ord(char):04X}')
+                continue
+                
+            # Count Unicode characters (existing logic)
             if ord(char) > 127:
-                if unicodedata.category(char) not in ['Ll', 'Lu', 'Lt', 'Lm', 'Lo', 'Nd', 'Nl', 'No', 'Pc', 'Pd', 'Pe', 'Pf', 'Pi', 'Po', 'Ps', 'Sc', 'Sk', 'Sm', 'So', 'Zl', 'Zp', 'Zs']:
+                if category not in ['Ll', 'Lu', 'Lt', 'Lm', 'Lo', 'Nd', 'Nl', 'No', 'Pc', 'Pd', 'Pe', 'Pf', 'Pi', 'Po', 'Ps', 'Sc', 'Sk', 'Sm', 'So', 'Zl', 'Zp', 'Zs']:
                     unicode_count += 1
-                    
-            if unicode_count > self.MAX_UNICODE_CHAR:
-                raise SecurityError('Too many unusual Unicode characters detected in text')
+                
+        if unicode_count > self.MAX_UNICODE_CHAR:
+            raise SecurityError('Too many unusual Unicode characters detected in text')
     
     def sanitize_text(self, text):
         # Sanitize text by escaping HTML entities and stripping leading/trailing whitespace.
@@ -92,14 +101,23 @@ class TextAnalyser:
         
         return text.strip()
     
-    def perform_security_checks(self, text):
+    def perform_security_checks(self, text, is_file_upload=False):
         # Perform all security checks on the input text.
-        self.validate_input_length(text)                # Basic length check
-        sanitized_text = self.sanitize_text(text)       # Sanitize text
-        self.validate_input_length(sanitized_text)      # Re-check length after sanitization    
-        self.validate_unicode_safety(sanitized_text)    # Unicode safety check
-        self.detect_malicious_patterns(sanitized_text)  # Malicious pattern detection
-        return sanitized_text
+        # For file uploads, skip the character length validation
+        if is_file_upload:
+            # Only perform security checks, not length validation
+            sanitized_text = self.sanitize_text(text)
+            self.validate_unicode_safety(sanitized_text)
+            self.detect_malicious_patterns(sanitized_text)
+            return sanitized_text
+        else:
+            # For direct text input, perform all checks including length validation
+            self.validate_input_length(text)                # Basic length check
+            sanitized_text = self.sanitize_text(text)       # Sanitize text
+            self.validate_input_length(sanitized_text)      # Re-check length after sanitization    
+            self.validate_unicode_safety(sanitized_text)    # Unicode safety check
+            self.detect_malicious_patterns(sanitized_text)  # Malicious pattern detection
+            return sanitized_text
 
     def split_into_sentences(self, text):
         # Split text into sentences. Returns a list of sentences with their positions in the original text.
@@ -236,12 +254,13 @@ class TextAnalyser:
         
         return results
     
-    def analyse_text(self, text, source_type='text', filename=None, force_single_analysis=False):
+    def analyse_text(self, text, source_type='text', filename=None, force_single_analysis=False, is_file_upload=False):
         # Main analysis method that automatically detects whether to use single-text or sentence-level analysis and returns API-ready JSON.
 
         try:
             # Perform security checks and sanitize input
-            text = self.perform_security_checks(text)
+            # Use the is_file_upload parameter to determine if we should skip length validation
+            text = self.perform_security_checks(text, is_file_upload)
 
             # detect if multiple sentences are present
             sentences = self.split_into_sentences(text)
