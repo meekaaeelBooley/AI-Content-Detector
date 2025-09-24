@@ -202,7 +202,6 @@ def detect_ai():
                 source_type=source_type, 
                 filename=filename, 
                 force_single_analysis=force_single_analysis,
-                is_file_upload=is_file_upload  # Add this parameter
             )
         except ValueError as e:
             return jsonify({'error': str(e)}), 400

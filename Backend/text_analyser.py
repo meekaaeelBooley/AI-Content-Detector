@@ -1,7 +1,6 @@
 import re
 import statistics
 import html
-import unicodedata
 from model import AIDetectionModel
 
 class SecurityError(Exception):
@@ -10,25 +9,14 @@ class SecurityError(Exception):
 class TextAnalyser:
     # Handles text analysis including sentence splitting and AI detection
     
-    MIN_SENTENCE_LENGTH = 30
+    MIN_SENTENCE_LENGTH = 10
     MAX_TEXT_LENGTH = 100000
-    
-    MAX_UNICODE_CHAR = 1000  # Maximum valid Unicode code point
+
     BLOCKED_PATTERNS = [
         r'<script[^>]*>.*?</script>',  # Script tags
         r'javascript:',               # JavaScript protocol
-        r'data:text/html',           # Data URLs with HTML
         r'vbscript:',                # VBScript protocol
         r'on\w+\s*=',                # Event handlers (onclick, onload, etc.)
-        r'<iframe[^>]*>',            # Iframe tags
-        r'<object[^>]*>',            # Object tags
-        r'<embed[^>]*>',             # Embed tags
-    ]
-    
-    SUSPICIOUS_KEYWORDS = [
-        'eval', 'exec', 'function', 'var ', 'let ', 'const ',
-        'document.', 'window.', 'alert(', 'confirm(', 'prompt(',
-        'XMLHttpRequest', 'fetch(', 'import ', 'require('
     ]
     
     def __init__(self):
@@ -43,81 +31,34 @@ class TextAnalyser:
             raise ValueError(f'Text exceeds maximum length of {max_length} characters')
     
     def detect_malicious_patterns(self, text):
-        # Detect potentially malicious patterns in the text.
+        # Detect potentially malicious patterns in the text (simplified)
         text_lower = text.lower()
         
         # Check for blocked patterns
         for pattern in self.BLOCKED_PATTERNS:
             if re.search(pattern, text_lower, re.IGNORECASE | re.DOTALL):
                 raise SecurityError('Malicious pattern detected in text')
-
-        # Check for suspicious keywords
-        suspicious_count = 0
-        for keyword in self.SUSPICIOUS_KEYWORDS:
-            if keyword in text_lower:
-                suspicious_count += 1
-                
-        # Raise error if multiple suspicious keywords are found        
-        if suspicious_count > 5:
-            raise SecurityError('Multiple suspicious keywords detected in text')
-        
-    def validate_unicode_safety(self, text):
-    # Check for unusual Unicode characters that might be used in attacks.
-        unicode_count = 0
-        
-        for char in text:
-            # Check for control characters ...be more specific about which ones to block
-            category = unicodedata.category(char)
-            if category.startswith('C'):
-                # Allow common whitespace control characters
-                if char in ('\n', '\r', '\t', ' ', '\f', '\v'):
-                    continue
-                # Allow other harmless control characters that might appear in file extracts
-                if category in ['Cc', 'Cf'] and ord(char) < 32:
-                    # Block only potentially dangerous control characters
-                    if ord(char) in [0x00, 0x08, 0x0B, 0x0C, 0x0E, 0x0F, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F]:
-                        raise SecurityError(f'Dangerous control character detected: U+{ord(char):04X}')
-                continue
-                
-            # Count Unicode characters (existing logic)
-            if ord(char) > 127:
-                if category not in ['Ll', 'Lu', 'Lt', 'Lm', 'Lo', 'Nd', 'Nl', 'No', 'Pc', 'Pd', 'Pe', 'Pf', 'Pi', 'Po', 'Ps', 'Sc', 'Sk', 'Sm', 'So', 'Zl', 'Zp', 'Zs']:
-                    unicode_count += 1
-                
-        if unicode_count > self.MAX_UNICODE_CHAR:
-            raise SecurityError('Too many unusual Unicode characters detected in text')
     
     def sanitize_text(self, text):
-        # Sanitize text by escaping HTML entities and stripping leading/trailing whitespace.
-        text = unicodedata.normalize('NFKC', text)
+        # Basic text sanitization
         text = html.unescape(text)   
         text = text.replace('\x00', '')  # Remove null bytes
         
-        # Normalise whitespace
+        # Normalize whitespace
         text = re.sub(r'\r\n|\r', '\n', text) # Normalize newlines
         text = re.sub(r'\n+', ' ', text)      # Replace multiple newlines with single space
         text = re.sub(r'\t+', ' ', text)      # Replace tabs with single space
-        text = re.sub(r' +', ' ', text)       # Strip leading/trailing whitespace
+        text = re.sub(r' +', ' ', text)       # Replace multiple spaces with single space
         
         return text.strip()
     
-    def perform_security_checks(self, text, is_file_upload=False):
-        # Perform all security checks on the input text.
-        # For file uploads, skip the character length validation
-        if is_file_upload:
-            # Only perform security checks, not length validation
-            sanitized_text = self.sanitize_text(text)
-            self.validate_unicode_safety(sanitized_text)
-            self.detect_malicious_patterns(sanitized_text)
-            return sanitized_text
-        else:
-            # For direct text input, perform all checks including length validation
-            self.validate_input_length(text)                # Basic length check
-            sanitized_text = self.sanitize_text(text)       # Sanitize text
-            self.validate_input_length(sanitized_text)      # Re-check length after sanitization    
-            self.validate_unicode_safety(sanitized_text)    # Unicode safety check
-            self.detect_malicious_patterns(sanitized_text)  # Malicious pattern detection
-            return sanitized_text
+    def perform_security_checks(self, text):
+        # Perform essential security checks on the input text
+        self.validate_input_length(text)                # Basic length check
+        sanitized_text = self.sanitize_text(text)       # Sanitize text
+        self.validate_input_length(sanitized_text)      # Re-check length after sanitization    
+        self.detect_malicious_patterns(sanitized_text)  # Malicious pattern detection
+        return sanitized_text
 
     def split_into_sentences(self, text):
         # Split text into sentences. Returns a list of sentences with their positions in the original text.
@@ -211,7 +152,7 @@ class TextAnalyser:
                 if len(sentence.strip()) < self.MIN_SENTENCE_LENGTH:
                     results.append({
                         'index': idx,
-                        'sentence_preview': sentence[:100] + ('...' if len(sentence) > 100 else ''),
+                        'sentence_preview': sentence,
                         'error': f'Sentence must be at least {self.MIN_SENTENCE_LENGTH} characters long'
                     })
                     continue
@@ -219,7 +160,7 @@ class TextAnalyser:
                 if len(sentence) > self.MAX_TEXT_LENGTH:
                     results.append({
                         'index': idx,
-                        'sentence_preview': sentence[:100] + ('...' if len(sentence) > 100 else ''),
+                        'sentence_preview': sentence,
                         'error': f'Sentence must be less than {self.MAX_TEXT_LENGTH:,} characters'
                     })
                     continue
@@ -254,13 +195,12 @@ class TextAnalyser:
         
         return results
     
-    def analyse_text(self, text, source_type='text', filename=None, force_single_analysis=False, is_file_upload=False):
+    def analyse_text(self, text, source_type='text', filename=None, force_single_analysis=False):
         # Main analysis method that automatically detects whether to use single-text or sentence-level analysis and returns API-ready JSON.
 
         try:
             # Perform security checks and sanitize input
-            # Use the is_file_upload parameter to determine if we should skip length validation
-            text = self.perform_security_checks(text, is_file_upload)
+            text = self.perform_security_checks(text)
 
             # detect if multiple sentences are present
             sentences = self.split_into_sentences(text)
