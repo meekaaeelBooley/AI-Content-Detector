@@ -1,0 +1,22 @@
+*do all the following in wsl*
+
+INSTALLING REDIS ON UBUNTU/ WSL:
+# Update package list
+sudo apt update
+
+# Install Redis
+sudo apt install redis-server
+
+# Enable and start Redis service
+sudo systemctl enable redis-server
+sudo systemctl start redis-server
+
+# Check if Redis is running
+sudo systemctl status redis-server
+redis-cli ping  # Should return "PONG"
+
+INSTALL PYTHON REDIS CLIENT
+pip install redis
+
+....when in wsl and app.py missing packages, install bulk using:
+pip install torch transformers flask flask-cors PyPDF2 python-docx werkzeug redis
