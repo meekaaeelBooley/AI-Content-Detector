@@ -1,6 +1,5 @@
 **/__pycache__/
 *.pyc
-.env
 Backend/ai_detector_model/
 Backend/venv
 *.txt
