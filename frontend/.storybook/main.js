@@ -12,8 +12,8 @@ const config = {
     "@storybook/addon-docs",
     "@storybook/addon-a11y",
     "@storybook/addon-vitest",
-    '@storybook/addon-essentials',
-    '@storybook/addon-interactions'
+    'storybook-react-router'
+    // "test-runner"
   ],
   "framework": {
     "name": "@storybook/react-vite",
