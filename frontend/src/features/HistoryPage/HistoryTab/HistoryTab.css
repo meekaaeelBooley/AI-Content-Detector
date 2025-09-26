@@ -1,4 +1,4 @@
-/* HistoryTab Component Styles */
+/* Main container for each history item */
 .history-tab {
   background: white;
   border: 2px solid #e0e0e0;
@@ -10,22 +10,21 @@
   margin-bottom: 1rem;
 }
 
+/* Hover effect */
 .history-tab:hover {
   border-color: #8E12D5;
   transform: translateY(-3px);
   box-shadow: 0 6px 16px rgba(142, 18, 213, 0.2);
 }
 
+/* Selected state when clicked */
 .history-tab.selected {
   border-color: #8E12D5;
   background-color: #f0f7fb;
   border-width: 3px;
 }
 
-.history-tab:active {
-  transform: translateY(0);
-}
-
+/* Content layout inside the tab */
 .tab-content {
   height: 100%;
   display: flex;
@@ -33,6 +32,7 @@
   gap: 0.75rem;
 }
 
+/* Title styling */
 .tab-title {
   margin: 0;
   color: #3D2D4C;
@@ -40,6 +40,7 @@
   font-weight: 600;
 }
 
+/* Preview text styling with line clamp */
 .tab-preview {
   margin: 0;
   color: #555;
@@ -52,6 +53,7 @@
   -webkit-box-orient: vertical;
 }
 
+/* Metadata row with score and date */
 .tab-meta {
   display: flex;
   justify-content: space-between;
@@ -59,6 +61,7 @@
   font-size: 0.85rem;
 }
 
+/* AI score badge */
 .tab-score {
   color: #8E12D5;
   font-weight: 600;
@@ -67,10 +70,12 @@
   border-radius: 16px;
 }
 
+/* Date styling */
 .tab-date {
   color: #888;
 }
 
+/* Classification badge */
 .tab-classification {
   font-size: 0.8rem;
   color: #666;
@@ -80,25 +85,4 @@
   background-color: #f8f9fa;
   border-radius: 12px;
   border: 1px solid #e0e0e0;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  .history-tab {
-    padding: 1rem;
-  }
-  
-  .tab-meta {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.25rem;
-  }
-  
-  .tab-title {
-    font-size: 1rem;
-  }
-  
-  .tab-preview {
-    font-size: 0.9rem;
-  }
 }

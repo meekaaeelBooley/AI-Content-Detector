@@ -9,53 +9,60 @@ import AnalysisHistory from "./AnalysisHistory/AnalysisHistory";
 import Button from "../../components/Button";
 import "./HistoryPage.css";
 
-const HistoryPage = () => {
-  const [analyses, setAnalyses] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [selectedAnalysis, setSelectedAnalysis] = useState(null);
-  const [showAnalysisDetail, setShowAnalysisDetail] = useState(false);
+const HistoryPage = function() {
+  // State variables to manage the page
+  const [analyses, setAnalyses] = useState([]); // List of past analyses
+  const [loading, setLoading] = useState(true); // Loading spinner state
+  const [error, setError] = useState(null); // Error messages
+  const [selectedAnalysis, setSelectedAnalysis] = useState(null); // Which analysis is clicked
+  const [showAnalysisDetail, setShowAnalysisDetail] = useState(false); // Show details view
 
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // For changing pages
+  const panelButtons = ["AI Text Detector", "History"]; // Navigation buttons
 
-  const panelButtons = ["AI Text Detector", "History"];
-
-  const handlePanelSelect = (button) => {
+  // Handle panel button clicks
+  function handlePanelSelect(button) {
     if (button === "AI Text Detector") {
-      navigate("/AITextDetectorPage");
+      navigate("/AITextDetectorPage"); // Go to AI detector page
     }
   };
 
-  const handleLogoClick = () => {
-    setSelectedAnalysis(null);
-    setShowAnalysisDetail(false);
-    loadHistory();
+  // Go back to homepage
+  function handleLogoClick() {
+    navigate("/");
   };
 
-  const loadHistory = async () => {
-    setLoading(true);
-    setError(null);
+  // Load the analysis history from the API
+  async function loadHistory() {
+    setLoading(true); // Show loading spinner
+    setError(null); // Clear any errors
 
     try {
       const response = await apiService.getHistory();
-      console.log("History response session ID:", response.data.session_id);
-      console.log("History response:", response.data);
-      setAnalyses(response.data.analyses || []);
+      console.log("History loaded:", response.data);
+      
+      // Sort analyses from newest to oldest
+      const sortedAnalyses = (response.data.analyses || []).sort(function(a, b) {
+        return new Date(b.timestamp) - new Date(a.timestamp);
+      });
+      
+      setAnalyses(sortedAnalyses);
     } catch (err) {
       const errorMessage = handleApiError(err);
       setError(errorMessage);
       console.error("Error loading history:", err);
     } finally {
-      setLoading(false);
+      setLoading(false); // Hide loading spinner
     }
   };
 
-  const clearHistory = async () => {
+  // Clear all history (with confirmation)
+  async function clearHistory() {
     if (window.confirm("Are you sure you want to clear all history?")) {
       try {
         await apiService.clearHistory();
-        setAnalyses([]);
-        setSelectedAnalysis(null);
+        setAnalyses([]); // Empty the list
+        setSelectedAnalysis(null); // Clear selection
       } catch (err) {
         const errorMessage = handleApiError(err);
         setError(errorMessage);
@@ -64,16 +71,16 @@ const HistoryPage = () => {
     }
   };
 
-  const handleTabClick = (analysis) => {
+  // Handle when a history tab is clicked
+  function handleTabClick(analysis) {
     setSelectedAnalysis(analysis);
-    setShowAnalysisDetail(true);
+    setShowAnalysisDetail(true); // Show the detailed view
   };
 
-  useEffect(() => {
+  // Load history when page first loads
+  useEffect(function() {
     loadHistory();
-  }, []);
-
-
+  }, []); // Empty array means run only once
 
   return (
     <div className="history-page">
@@ -84,19 +91,20 @@ const HistoryPage = () => {
         
         <div className="content-area">
           {showAnalysisDetail ? (
-            // Show AnalysisHistory with Metrics
+            // Show detailed analysis view
             <AnalysisHistory 
               analysis={selectedAnalysis}
-              onBack={() => {
+              onBack={function() {
                 setShowAnalysisDetail(false);
                 setSelectedAnalysis(null);
               }}
             />
           ) : (
-            // Show only the HistoryTab list (no Metrics)
+            // Show list of history items
             <div className="history-container-full">
               <h2 className="panel-title">Analysis History</h2>
               
+              {/* Show error message if something went wrong */}
               {error && (
                 <div className="error-message">
                   {error}
@@ -104,26 +112,27 @@ const HistoryPage = () => {
                     onClick={loadHistory}
                     variant="primary"
                     size="small"
-                    style={{
-                      marginLeft: '10px',
-                    }}
+                    style={{ marginLeft: '10px' }}
                   >
                     Retry
                   </Button>
                 </div>
               )}
 
+              {/* Show loading spinner */}
               {loading ? (
                 <div className="loading-indicator">
                   <div className="spinner"></div>
                   <p>Loading history...</p>
                 </div>
               ) : analyses.length === 0 ? (
+                // Show empty state if no analyses
                 <div className="empty-state">
                   <p>No analysis history yet.</p>
                   <p>Go to AI Text Detector to analyze some text!</p>
                 </div>
               ) : (
+                // Show list of analyses
                 <>
                   <div className="history-controls">
                     <Button 
@@ -136,14 +145,16 @@ const HistoryPage = () => {
                   </div>
 
                   <div className="history-list">
-                    {analyses.map((analysis, index) => (
-                      <HistoryTab
-                        key={analysis.id || index}
-                        analysis={analysis}
-                        onClick={handleTabClick}
-                        isSelected={selectedAnalysis?.id === analysis.id}
-                      />
-                    ))}
+                    {analyses.map(function(analysis, index) {
+                      return (
+                        <HistoryTab
+                          key={analysis.id || index} // Use ID or index as unique key
+                          analysis={analysis}
+                          onClick={handleTabClick}
+                          isSelected={selectedAnalysis?.id === analysis.id}
+                        />
+                      );
+                    })}
                   </div>
                 </>
               )}
