@@ -1,15 +1,16 @@
 import axios from 'axios';
 
 // const API_BASE_URL = 'http://16.171.92.37:5000/api';
+
+// For development with local backend, use:
 const API_BASE_URL = 'http://127.0.0.1:5000/api';
-// For development with local backend, use: 'http://127.0.0.1:5000/api'
 
 const API_KEY = import.meta.env.REACT_APP_API_KEY || 'jackboys25';
 
 // axios instance with default config
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000,
+  timeout: 600000,
   headers: {
     'Content-Type': 'application/json',
     'X-API-Key': API_KEY
@@ -111,7 +112,7 @@ export const handleApiError = function(error) {
     } else if (status === 404) {
       return data.error || 'Page not found';
     } else if (status === 413) {
-      return data.error || 'File too big (max 5MB)';
+      return data.error || 'File too big (max 500KB)';
     } else if (status === 500) {
       return data.error || 'Server error';
     } else {
