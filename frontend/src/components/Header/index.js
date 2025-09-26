@@ -1,5 +1,3 @@
-// export { Header } from "./Header";
-// export { default as Header } from "./Header";
 
 import Header from "./Header";
 export default Header; // Add default export for convenient importing

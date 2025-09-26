@@ -1,46 +1,35 @@
-/* Container styles for the icon component */
+/* icon container */
 .icon-container {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  transition: all 0.2s ease-in-out; /* Smooth transitions for interactions */
-  position: relative;
-}
-
-/* Hover effects for interactive icons */
-.icon-container:hover {
-  transform: translateY(-2px); /* Lift effect on hover */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow on hover */
-}
-
-/* Active state when icon is clicked */
-.icon-container:active {
-  transform: translateY(0); /* Reset lift effect */
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Reduced shadow */
-}
-
-/* Focus indicator for keyboard navigation */
-.icon-container:focus {
-  outline: 2px solid #8E12D5; /* Purple focus ring */
-  outline-offset: 2px; /* Space between icon and focus ring */
-}
-
-/* Disabled state styles */
-.icon-container[aria-disabled="true"] {
-  pointer-events: none; /* Prevent interactions */
-  opacity: 0.5; /* Visual indication of disabled state */
-}
-
-/* Remove hover effects for disabled icons */
-.icon-container[aria-disabled="true"]:hover {
-  transform: none;
-  box-shadow: none;
-}
-
-/* SVG icon alignment and positioning */
-.icon-svg {
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Hover effect for clickable icons */
+.icon-container:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* When icon is clicked */
+.icon-container:active {
+  transform: translateY(0);
+}
+
+/* Focus ring for keyboard users */
+.icon-container:focus {
+  outline: 2px solid #8E12D5;
+}
+
+/* Disabled state */
+.icon-container[aria-disabled="true"] {
+  pointer-events: none; /* Can't click */
+  opacity: 0.5;
+}
+
+/* Remove hover effects when disabled */
+.icon-container[aria-disabled="true"]:hover {
+  transform: none;
+  box-shadow: none;
 }

@@ -10,32 +10,36 @@ const Button = ({
   color,
   backgroundColor,
   disabled = false,
-  ...props 
+  ...props // For html elements
 }) => {
+  // Track if button was just clicked for animation
   const [isClicked, setIsClicked] = useState(false);
 
   const handleClick = (e) => {
-    if (disabled) return;
-    
+    if (disabled) return; // Don't do anything if disabled
+    // Show click animation
     setIsClicked(true);
+    // Remove animation after 150ms
     setTimeout(() => setIsClicked(false), 150);
+    
+    // Call the onClick function if provided
     if (onClick) onClick(e);
   };
 
-  // Determine button classes based on props
+  // Combine all CSS classes needed
   const buttonClasses = [
     'custom-button',
     variant,
     size,
-    isClicked ? 'clicked' : '',
-    disabled ? 'disabled' : ''
-  ].filter(Boolean).join(' ');
+    isClicked ? 'clicked' : '', // Add 'clicked' class if button was just pressed
+    disabled ? 'disabled' : ''   // Add 'disabled' class if button is disabled
+  ].filter(Boolean).join(' '); // Remove any empty strings
 
-  // Custom styles based on props
+  // Custom styles that can change via props
   const customStyles = {
     borderRadius: borderRadius,
-    ...(color && { color }),
-    ...(backgroundColor && { backgroundColor })
+    ...(color && { color }), // Only add color if provided
+    ...(backgroundColor && { backgroundColor }) // Only add background color if provided
   };
 
   return (
@@ -44,7 +48,7 @@ const Button = ({
       style={customStyles}
       onClick={handleClick}
       disabled={disabled}
-      {...props}
+      {...props} // Pass any other props through...
     >
       {children}
     </button>

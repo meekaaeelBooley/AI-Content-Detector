@@ -1,33 +1,33 @@
 import React from 'react';
 import './Icon.css';
 
-// Flexible icon component that wraps react icons with custom styling
+// Simple icon wrapper component
 const Icon = ({
-  icon: IconComponent, // React icon component passed as prop
-  color = '#8E12D5', // Default purple color
-  backgroundColor = 'white', // Default white background
-  size = 40, // Default size in pixels
-  isClickable = true, // Whether icon is interactive
-  isDisabled = false, // Disabled state
-  onClick, // Click handler function
-  className = '', // Additional CSS classes
-  ...props // Spread remaining props
+  icon: IconComponent, // The actual icon component from react-icons
+  color = '#8E12D5', 
+  backgroundColor = 'white',
+  size = 40,
+  isClickable = true,
+  isDisabled = false,
+  onClick,
+  className = '',
+  ...props 
 }) => {
-  // Handle click events with state validation
+  // Handle clicks only if allowed
   const handleClick = (e) => {
     if (!isDisabled && isClickable && onClick) {
       onClick(e);
     }
   };
 
-  // Dynamic styles based on props
+  // Style object for the icon container
   const iconStyles = {
     width: `${size}px`,
     height: `${size}px`,
     backgroundColor: backgroundColor,
-    borderRadius: '10px', // Slightly rounded corners
-    cursor: isClickable && !isDisabled ? 'pointer' : 'default', // Pointer cursor for clickable icons
-    opacity: isDisabled ? 0.5 : 1, // Visual feedback for disabled state
+    borderRadius: '10px',
+    cursor: isClickable && !isDisabled ? 'pointer' : 'default',
+    opacity: isDisabled ? 0.5 : 1,
   };
 
   return (
@@ -35,17 +35,16 @@ const Icon = ({
       className={`icon-container ${className}`}
       style={iconStyles}
       onClick={handleClick}
-      role={isClickable ? 'button' : 'presentation'} // ARIA role for accessibility
-      aria-disabled={isDisabled} // Accessibility attribute
-      tabIndex={isClickable && !isDisabled ? 0 : -1} // Keyboard tab navigation
-      {...props} // Pass through any additional props
+      role={isClickable ? 'button' : 'presentation'} // For screen readers
+      aria-disabled={isDisabled}
+      tabIndex={isClickable && !isDisabled ? 0 : -1} // Keyboard navigation
+      {...props}
     >
-      {/* Render the icon component if provided */}
+      {/* Render the icon if provided */}
       {IconComponent && (
         <IconComponent
-          size={size * 0.6} // Scale icon to 60% of container size
+          size={size * 0.6} // Make icon smaller than container
           color={color}
-          className="icon-svg"
         />
       )}
     </div>

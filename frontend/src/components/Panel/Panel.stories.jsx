@@ -1,15 +1,17 @@
 import Panel from "./Panel";
 
-// Storybook configuration for Panel component
 export default {
   title: "Components/Panel",
   component: Panel,
+  tags: ['autodocs'], // Auto generate documentation
 };
 
-// Default story with example buttons and alert callback
+// Example panel with navigation buttons.
 export const Default = {
-  args:{
-    buttons:["AI Text Detector", "History"], // Navigation options
-    onSelect:(button) => alert(`Selected: ${button}`), // Demo selection handler
+  args: {
+    buttons: ["AI Text Detector", "History"],
+    onSelect: function(button) { 
+      alert("Selected:", button); // alert
+    },
   },
 };

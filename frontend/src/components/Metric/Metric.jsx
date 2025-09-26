@@ -5,7 +5,7 @@ const Metric = ({
   percentage = 0, 
   size = 120, 
   strokeWidth = 12,
-  strokeColor = "#3D2D4C" // Default dark purple
+  strokeColor = "#8E12D5" // Default purple
 }) => {
   // Calculate circle geometry based on props
   const radius = (size - strokeWidth) / 2;
@@ -25,7 +25,7 @@ const Metric = ({
       }}
     >
       <svg width={size} height={size}>
-        {/* Background circle - shows the full track */}
+        {/* Background circle. Shows the full track */}
         <circle
           stroke="#F0F7FB" // Light blue background track
           fill="transparent"
@@ -34,7 +34,7 @@ const Metric = ({
           cx={size / 2}
           cy={size / 2}
         />
-        {/* Progress circle - shows the actual percentage */}
+        {/* Progress circle. Shows the actual percentage */}
         <circle
           stroke={strokeColor} // Customizable stroke color
           fill="transparent"

@@ -19,7 +19,7 @@
   border: none;
   outline: none;
   resize: none; /* Disable manual resizing */
-  font-family: inherit;
+  font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
   font-size: 14px;
   line-height: 1.4;
   color: #000000;

@@ -1,14 +1,14 @@
-import Header from "./Header"; // This imports the default export
+import Header from "./Header";
 
-// Storybook configuration for Header component
 export default {
   title: "Components/Header",
   component: Header,
+  tags: ['autodocs'], // Auto generate documentation
 };
 
-// Default story with interactive logo example
+// Basic header example
 export const Default = {
   args: {
-    onLogoClick: () => alert("Logo clicked!"), // Demo click handler for Storybook
+    onLogoClick: () => console.log("Logo clicked!"), // Just log instead of annoying alert
   },
 };
