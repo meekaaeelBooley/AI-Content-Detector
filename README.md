@@ -1,5 +1,19 @@
 # aicd
 
+getting started with React+Vite:
+npm create vite@latest
+    choose React and then Javascript
+cd frontend
+npm install
+
+To use it:
+npm run dev
+
+Getting started with Storybook:
+npm create storybook@latest
+
+To use storybook:
+npm run storybook
 
 
 ## Getting started
