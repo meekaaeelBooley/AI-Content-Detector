@@ -1,6 +1,7 @@
 # Run Redis inside WSL and then start the python flask app
 
-# Start Redis in WSL (requires sudo password ). Neat trick to run commands in wsl from powershell.
+# The following line is derived from chatGPT. Neat trick to run commands in wsl from powershell.
+# Start Redis in WSL (requires sudo password ). 
 wsl -e bash -c "sudo systemctl start redis-server"
 
 # Activate virtual environment

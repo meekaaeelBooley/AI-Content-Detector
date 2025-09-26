@@ -2,6 +2,7 @@
 python -m venv venv
 .\venv\Scripts\Activate.ps1
 
+# The following line is derived from chatGPT
 # Check and install Redis if needed. Will return PONG if redis started, else it will install and start redis server in wsl. Neat trick to use commands in wsl from powershell.
 wsl -e bash -c "redis-cli ping || (sudo apt install -y redis-server && sudo systemctl start redis-server)"
 
