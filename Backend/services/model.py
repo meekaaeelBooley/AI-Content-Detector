@@ -9,11 +9,13 @@ class AIDetectionModel:
         # This path is for the backend hosted on the AWS EC2 Instance (Virtual Machine):
         # self.model_path = "/home/ubuntu/aicd-backend/ai_detector_model"
 
-        self.model_path = "ai_detector_model" 
-        
+        # This path is for when the model is located on our machines.
+        # Updated path to reflect new structure
+        self.model_path = "./ai_detector_model"
+
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_path)
         self.model = AutoModelForSequenceClassification.from_pretrained(self.model_path)
-        
+
         # Set up device
         self.device = torch.device("cpu")
         self.model.to(self.device)
@@ -22,17 +24,23 @@ class AIDetectionModel:
     def predict(self, text):
         # Predict whether text is AI-generated or human-written
         # Returns a dictionary with probabilities and confidence
+
         inputs = self.tokenizer(text, return_tensors="pt", truncation=True, padding=True, max_length=512)
+        
         # Move inputs to device
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
+        
         # Get predictions
         with torch.no_grad():
             outputs = self.model(**inputs)
             logits = outputs.logits
+
             probabilities = F.softmax(logits, dim=-1)
+            
             # Extract individual probabilities
-            human_prob = probabilities[0][0].item() # Class 0 (human)
-            ai_prob = probabilities[0][1].item()  # Class 1 (ai)
+            human_prob = probabilities[0][0].item()   # Class 0 (human)
+            ai_prob = probabilities[0][1].item()      # Class 1 (ai)
+            
             # Calculate confidence score (probability of predicted class)
             confidence_score = max(human_prob, ai_prob)
         return {
@@ -44,11 +52,11 @@ class AIDetectionModel:
     def predict_with_confidence(self, text):
         # Predict with additional confidence level categorization
         result = self.predict(text)
+        
         prediction = 1 if result['ai_probability'] > result['human_probability'] else 0
         confidence_score = result['confidence']
         
         # Determine confidence level
-        # Derived from chatGPT:
         if confidence_score >= 0.9:
             confidence_level = "Very High"
         elif confidence_score >= 0.8:
@@ -80,16 +88,21 @@ class AIDetectionModel:
             results.append(result)
         return results
 
+
 # For backwards compatibility and standalone testing
 def create_model(model_path):
     return AIDetectionModel()
+
 
 # Standalone testing code (only runs when script is executed directly)
 if __name__ == "__main__":    
     # Create model instance
     detector = AIDetectionModel()
+
     test_sentence = """Progress in software engineering over the last 50 years has been astonishing. Our societies could not function without large professional software systems."""
+
     result = detector.predict_with_confidence(test_sentence)
+    
     print("="*50)
     print("AI Detection Results")
     print("="*50)
@@ -100,7 +113,7 @@ if __name__ == "__main__":
     print("Detailed Probabilities:")
     print(f"Human Probability: {result['human_probability']:.4f} ({result['human_probability']*100:.2f}%)")
     print(f"AI Probability: {result['ai_probability']:.4f} ({result['ai_probability']*100:.2f}%)")
-
+    
     test_sentences = [
         "I feel like a lot of what people think of as a failing of GPT-5 is really a failing of the router.",
         "The router is just not good at knowing when to switch models, or into a mode that uses tools.",

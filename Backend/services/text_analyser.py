@@ -1,13 +1,14 @@
 import re
 import statistics
 import html
-from app.models.model import AIDetectionModel
+from services.model import AIDetectionModel
 
 class SecurityError(Exception):
     pass
 
 class TextAnalyser:
     # Handles text analysis including sentence splitting and AI detection
+    
     MIN_SENTENCE_LENGTH = 10
     MAX_TEXT_LENGTH = 100000
 
@@ -19,12 +20,8 @@ class TextAnalyser:
     ]
     
     def __init__(self):
-        try:
-            self.model = AIDetectionModel()
-        except Exception as e:
-            print(f"Error initializing AIDetectionModel: {e}")
-            raise
-    
+        self.model = AIDetectionModel()
+        
     def validate_input_length(self, text, max_length=None):
         if max_length is None:
             max_length = self.MAX_TEXT_LENGTH
@@ -219,16 +216,16 @@ class TextAnalyser:
                 return {
                     'analysis_type': 'sentence_level',
                     'result': {
-                        'overall_ai_probability': overall_metrics.get('overall_ai_probability', 0.0),
-                        'overall_human_probability': overall_metrics.get('overall_human_probability', 1.0),
-                        'overall_confidence': overall_metrics.get('overall_confidence', 0.0),
-                        'overall_classification': overall_metrics.get('overall_classification', 'Unknown'),
-                        'sentence_count': overall_metrics.get('sentence_count', 0),
-                        'analyzed_sentences': overall_metrics.get('analyzed_sentences', 0),
-                        'ai_sentence_count': overall_metrics.get('ai_sentence_count', 0),
-                        'human_sentence_count': overall_metrics.get('human_sentence_count', 0),
-                        'ai_percentage': overall_metrics.get('ai_percentage', 0),
-                        'confidence_range': overall_metrics.get('confidence_range', {'min': 0, 'max': 0, 'std_dev': 0}),
+                        'overall_ai_probability': overall_metrics['overall_ai_probability'],
+                        'overall_human_probability': overall_metrics['overall_human_probability'],
+                        'overall_confidence': overall_metrics['overall_confidence'],
+                        'overall_classification': overall_metrics['overall_classification'],
+                        'sentence_count': overall_metrics['sentence_count'],
+                        'analyzed_sentences': overall_metrics['analyzed_sentences'],
+                        'ai_sentence_count': overall_metrics['ai_sentence_count'],
+                        'human_sentence_count': overall_metrics['human_sentence_count'],
+                        'ai_percentage': overall_metrics['ai_percentage'],
+                        'confidence_range': overall_metrics['confidence_range'],
                         'text_length': len(text),
                         'source_type': source_type,
                         'filename': filename

@@ -10,62 +10,58 @@ from contextlib import contextmanager
 class FileValidator:
     @staticmethod
     def scan_for_malicious_patterns(file_path: str) -> bool:
-        # Check if file contains dangerous code patterns
+        # Scan file for known malicious patterns
         try:
             with open(file_path, 'rb') as file:
                 file_content = file.read()
-                # Common malicious code patterns to block
+                
                 known_malicious_patterns = [b'<script', b'javascript', b'eval(', b'<?php']
                 file_content = file_content.lower()
                 for pattern in known_malicious_patterns:
                     if pattern in file_content:
-                        return False  # Malicious content found
-            return True  # File is safe
+                        return False
+            return True
         except Exception as e:
             print(f"Error scanning for malicious patterns: {e}")
-            return True  # Assume safe if scan fails
+            return True
 
 class FilenameSanitizer:
     MAX_FILENAME_LENGTH = 100
-    # Patterns that could be used for path traversal attacks
+    
     dangerous_patterns = [r'\.\./', r'\\', r'/', r'^\.',r'[\x00-\x1f]', r'[<>:"|?*]']
     
     @staticmethod
     def sanitize_filename(filename: str) -> str:
-        # Clean filename to prevent security issues
+        # Sanitize filename to prevent directory traversal and remove dangerous characters
         if not filename or len(filename) > FilenameSanitizer.MAX_FILENAME_LENGTH:
             return None
         
-        # Remove dangerous characters and patterns
         for pattern in FilenameSanitizer.dangerous_patterns:
             filename = re.sub(pattern, '', filename)
             
-        # Ensure filename has proper extension
         parts = filename.split('.')
         if len(parts) < 2:
             filename = parts[0] + '.' + parts[-1]
             
         filename = filename.strip('. ')
         
-        # Final validation
         if not filename or filename.startswith('.'):
             return None
-        return filename
 
+        return filename
+    
 class SecureTempFile:
     @staticmethod
     @contextmanager
     def create_secure_temp_file(suffix: str = '', prefix: str = 'secure_'):
-        # Create a temporary file that gets automatically deleted
+        # Create a secure temporary file
         fd = None
         file_path = None
         try:
-            # Create temporary file with secure permissions
             fd, file_path = tempfile.mkstemp(suffix=suffix, prefix=prefix)
-            os.chmod(file_path, stat.S_IRUSR | stat.S_IWUSR)  # Only user can read/write
-            yield fd, file_path  # Give file to caller
+            os.chmod(file_path, stat.S_IRUSR | stat.S_IWUSR)  # Owner read/write only
+            yield fd, file_path
         finally:
-            # Always clean up, even if errors occur
             if fd is not None:
                 try:
                     os.close(fd)
@@ -76,7 +72,7 @@ class SecureTempFile:
                 
     @staticmethod
     def secure_delete_file(file_path: str) -> None:
-        # Safely delete temporary file
+        # Simple file deletion
         try:
             if os.path.exists(file_path):
                 os.remove(file_path)
@@ -84,30 +80,31 @@ class SecureTempFile:
             print(f"Delete error for {file_path}: {e}")
 
 class FileProcessor:
-    # Supported file types and size limits
+    # handles file upload processing and text extraction
     ALLOWED_EXTENSIONS = {'txt', 'pdf', 'docx'}
-    MAX_FILE_SIZE = 500 * 1024  # 500KB limit
+    MAX_FILE_SIZE = 500 * 1024  # 500kb
     
     def __init__(self, upload_folder=None):
         self.upload_folder = upload_folder or tempfile.gettempdir()
         self.validate_upload_folder()
         
     def validate_upload_folder(self):
-        # Ensure upload directory exists and is writable
+        # Ensure upload folder exists and is writable
         if not os.path.exists(self.upload_folder):
-            os.makedirs(self.upload_folder, mode=0o700)  # Secure permissions
+            os.makedirs(self.upload_folder, mode=0o700)
         if not os.access(self.upload_folder, os.W_OK):
             raise PermissionError(f"Upload folder '{self.upload_folder}' is not writable")
         
     def allowed_file(self, filename):
-        # Check if file extension is supported
+        # Check if file extension is allowed
         if not filename or '.' not in filename:
             return False
+        
         extension = filename.rsplit('.', 1)[1].lower()
         return extension in self.ALLOWED_EXTENSIONS
 
     def validate_uploaded_file(self, file) -> Tuple[bool, Optional[str]]:
-        # Comprehensive file validation
+        # Validate uploaded file before processing
         if not file or not file.filename:
             return False, "No file provided"
 
@@ -121,7 +118,7 @@ class FileProcessor:
         return True, sanitised_filename
 
     def extract_text_from_pdf(self, file_path):
-        # Extract text content from PDF files
+        # Extract text from PDF file
         try:
             with open(file_path, 'rb') as file:
                 reader = PyPDF2.PdfReader(file)
@@ -131,10 +128,10 @@ class FileProcessor:
             return text.strip()
         except Exception as e:
             print(f"Error extracting text from PDF: {e}")
-            return ''  # Return empty string on failure
+            return ''
 
     def extract_text_from_docx(self, file_path):
-        # Extract text content from Word documents
+        # Extract text from DOCX file
         try:
             doc = docx.Document(file_path)
             text = ''
@@ -146,12 +143,11 @@ class FileProcessor:
             return ''
 
     def extract_text_from_txt(self, file_path):
-        # Extract text content from plain text files
+        # Extract text from TXT file
         try:
             with open(file_path, 'r', encoding='utf-8') as file:
                 return file.read().strip()
         except UnicodeDecodeError:
-            # Try alternative encoding if UTF-8 fails
             try:
                 with open(file_path, 'r', encoding='latin-1') as file:
                     return file.read().strip()
@@ -163,11 +159,11 @@ class FileProcessor:
             return ''
 
     def process_file(self, uploaded_file, upload_folder=None):
-        # Main method to handle file upload and processing
+        # Process uploaded file and extract text
         if not uploaded_file or not uploaded_file.filename:
             raise ValueError("No file provided")
         
-        # Validate file before processing
+        # Validate the uploaded file
         is_valid, result = self.validate_uploaded_file(uploaded_file)
         if not is_valid:
             raise ValueError(result)
@@ -175,7 +171,7 @@ class FileProcessor:
         filename = result
         file_extension = filename.rsplit('.', 1)[1].lower()
         
-        # Use secure temporary file to prevent attacks
+        # Create secure temporary file
         with SecureTempFile.create_secure_temp_file(
             suffix=f'_{filename}', 
             prefix='upload_'
@@ -184,7 +180,7 @@ class FileProcessor:
             try:
                 # Save uploaded file to temporary location
                 with os.fdopen(fd, 'wb') as temp_file:
-                    uploaded_file.stream.seek(0)
+                    uploaded_file.stream.seek(0)  # Reset file pointer
                     chunk_size = 8192
                     while True:
                         chunk = uploaded_file.stream.read(chunk_size)
@@ -192,11 +188,11 @@ class FileProcessor:
                             break
                         temp_file.write(chunk)
                 
-                # Security check for malicious content
+                # Basic malicious pattern check
                 if not FileValidator.scan_for_malicious_patterns(file_path):
                     raise ValueError("Security scan failed - potentially malicious content detected")
                 
-                # Extract text based on file type
+                # Extract text based on file extension
                 if file_extension == 'pdf':
                     text = self.extract_text_from_pdf(file_path)
                 elif file_extension == 'docx':
@@ -206,9 +202,9 @@ class FileProcessor:
                 else:
                     raise ValueError("Unsupported file type")
                 
-                # Return extracted text and original filename
                 return text, filename
             
             except Exception as e:
+                # Log the error and re-raise
                 print(f"Error processing file {filename}: {e}")
-                raise e  # Re-raise exception for caller to handle
+                raise e
