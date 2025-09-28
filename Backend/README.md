@@ -28,22 +28,23 @@ A Flask-based REST API that uses machine learning to detect AI-generated vs huma
 
 ```
 aicd-backend/
-├── api/
-│   └── app.py                 # Main Flask application with API endpoints
-├── services/
-│   ├── __init__.py           # Package initialization
-│   ├── model.py              # AI detection model wrapper
-│   ├── text_analyser.py      # Text processing and analysis logic
-│   ├── file_processor.py     # File upload and text extraction
-│   └── redis_manager.py      # Redis session management
-├── tests/
-│   ├── test_model.py         # Model functionality tests
-│   └── test_api_func.py      # API endpoint tests
-├── ai_detector_model/        # Pre-trained model files (not in repo)
-├── install_quick.ps1         # Windows setup script
-├── start.ps1                # Windows start script
-├── run.py                   # Application entry point
-└── README.md                # This file
+|- api/
+|  |- app.py                 # Main Flask application with API endpoints
+|- services/
+|  |- __init__.py            # Package initialization
+|  |- model.py               # AI detection model wrapper
+|  |- text_analyser.py       # Text processing and analysis logic
+|  |- file_processor.py      # File upload and text extraction
+|  |- redis_manager.py       # Redis session management
+|- tests/
+|  |- test_model.py          # Model functionality tests
+|  |- test_api_func.py       # API endpoint tests
+|- ai_detector_model/        # Pre-trained model files (not in repo)
+|- install_quick.ps1         # Windows setup script
+|- start.ps1                 # Windows start script
+|- run.py                    # Application entry point
+|- Documentation/            # .docs.md files for each program
+|- README.md                 # This file
 ```
 
 ## Installation
