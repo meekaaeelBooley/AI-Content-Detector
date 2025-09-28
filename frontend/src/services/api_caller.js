@@ -1,3 +1,9 @@
+// CSC3003S Capstone Project - AI Content Detector
+// Year: 2025
+// Authors: Team 'JackBoys'
+// Members: Zubair Elliot(ELLZUB001), Mubashir Dawood(DWDMUB001), Meekaaeel Booley(BLYMEE001)
+
+
 import axios from 'axios';
 
 // const API_BASE_URL = 'http://16.171.92.37:5000/api';
