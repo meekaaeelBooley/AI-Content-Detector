@@ -21,13 +21,17 @@ const apiClient = axios.create({
     'Content-Type': 'application/json',
     'X-API-Key': API_KEY
   },
-  withCredentials: true,
+  withCredentials: true,  // This is crucial for session cookies
   crossDomain: true
 });
 
 // Simple request logger
 apiClient.interceptors.request.use(function(config) {
   console.log('Making request to:', config.url);
+  console.log('Request headers:', config.headers);
+  console.log('withCredentials:', config.withCredentials);
+  // Ensure withCredentials is always true
+  config.withCredentials = true;
   return config;
 }, function(error) {
   console.log('Request error:', error);
@@ -37,9 +41,21 @@ apiClient.interceptors.request.use(function(config) {
 // Simple response logger
 apiClient.interceptors.response.use(function(response) {
   console.log('Got response:', response.status);
+  console.log('Response headers:', response.headers);
+  // Log session ID if present in response
+  if (response.data && response.data.session_id) {
+    console.log('Session ID from response:', response.data.session_id);
+  }
+  // Log any cookies from response
+  if (response.headers['set-cookie']) {
+    console.log('Set-Cookie headers:', response.headers['set-cookie']);
+  }
   return response;
 }, function(error) {
   console.log('Response error:', error);
+  if (error.response) {
+    console.log('Error response headers:', error.response.headers);
+  }
   return Promise.reject(error);
 });
 
