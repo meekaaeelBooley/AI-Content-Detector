@@ -1,6 +1,3 @@
-
----
-
 # AI Content Detector (AI-CD) Application
 
 ## Overview
@@ -10,18 +7,6 @@ The AI Content Detector (AI-CD) is a web application designed to help users dete
 **CSC3003S Capstone Project - 2025**  
 **Team: JackBoys**  
 **Members:** Zubair Elliot (ELLZUB001), Mubashir Dawood (DWDMUB001), Meekaaeel Booley (BLYMEE001)
-
-## Table of Contents
-
-- [Project Overview](#project-overview)
-- [Backend Setup](#backend-setup)
-- [Frontend Setup](#frontend-setup)
-- [Usage](#usage)
-- [API Endpoints](#api-endpoints)
-- [Development](#development)
-- [Testing](#testing)
-- [Deployment](#deployment)
-- [Support](#support)
 
 ## Project Overview
 
@@ -58,12 +43,6 @@ git clone https://gitlab.cs.uct.ac.za/capstone25/aicd.git
 ```
 
 
-### Starting the Server
-
-```bash
-python app.py
-```
-
 The server will start on `http://0.0.0.0:5000` by default.
 
 ## Frontend Setup
@@ -77,39 +56,39 @@ The server will start on `http://0.0.0.0:5000` by default.
 
 1. Install dependencies:
 
-   ```bash
-   npm install
-   ```
+```bash
+npm install
+```
 
 2. Start the development server:
 
-   ```bash
-   npm run dev
-   ```
+```bash
+npm run dev
+```
 
-   This will start the Vite development server, and you can access the application at `http://localhost:5173`.
+This will start the Vite development server, and you can access the application at `http://localhost:5173`.
 
 3. Install and Run Storybook for Component Based UI Development and Testing:
 
-   ```bash
-   npx storybook@latest init
+```bash
+npx storybook@latest init
 
-   npm run storybook
-   ```
+npm run storybook
+```
 
-### Installation for Frontend
+### Installation for Backend
 
 1. Installation
-    ```powershell
-    # Run the automated setup script
-    .\install_quick.ps1
-    ```
+```powershell
+# Run the automated setup script
+.\install_quick.ps1
+```
 
 1. Run/Start
-    ```powershell
-    # Run the automated start script
-    .\start.ps1
-    ```
+```powershell
+# Run the automated start script
+.\start.ps1
+```
 
 ## Usage
 
@@ -159,7 +138,6 @@ For frontend deployment, refer to the [Frontend README](frontend/README.md).
 
 This project is developed for academic purposes as part of CSC3003S coursework at the University of Cape Town.
 
-
 ## Support
 
 For questions or issues, contact the development team:
@@ -167,5 +145,3 @@ For questions or issues, contact the development team:
 - Zubair Elliot (ELLZUB001)
 - Mubashir Dawood (DWDMUB001)
 - Meekaaeel Booley (BLYMEE001)
-
----
