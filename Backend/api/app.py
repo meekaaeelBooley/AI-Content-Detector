@@ -1,27 +1,49 @@
+"""
+CSC3003S Capstone Project - AI Content Detector
+Year: 2025
+Authors: Team 'JackBoys'
+Members: Zubair Elliot(ELLZUB001), Mubashir Dawood(DWDMUB001), Meekaaeel Booley(BLYMEE001)
+
+This Flask backend follows a typical REST API structure with these key components:
+
+    1. Authentication: Uses API keys (basic protection) and session management
+    2. File Processing: Handles PDF, DOCX, and TXT file uploads
+    3. AI Detection: Uses a pre-trained model ( electra) to analyze text for AI/human classification
+    4. Session Storage: Redis for persistence with memory fallback
+    5. Error Handling: Comprehensive error handling for different scenarios
+
+The main flow for AI detection:
+
+    -User submits text or file
+    -Validate input
+    -Split into sentences (if long)
+    -Run AI model on each
+    -Aggregate results
+    -Store in session
+    -Return JSON response
+
+Key design choices:
+
+    - Sentence-level analysis for better accuracy on long texts
+    - Session-based history to track user analyses
+    - CORS enabled for frontend communication
+"""
+
 from flask import Flask, request, jsonify, session
 from flask_cors import CORS
 import uuid
 import datetime
 from functools import wraps
 import os
-import traceback
 from services.file_processor import FileProcessor
 from services.text_analyser import TextAnalyser
 from services.redis_manager import redis_manager
 
-# Custom exceptions for file processing
-class SecurityError(Exception):
-    """Raised when file security validation fails"""
-    pass
+# API keys for basic authentication... in a non-academic project we'd use environment variables
+API_KEYS = {"jackboys25"}
 
-class ProcessingTimeoutError(Exception):
-    """Raised when file processing times out"""
-    pass
-
-API_KEYS = {"jackboys25"}  # Should be a set for membership testing
-
+# Decorator to require API key for protected routes
 def require_api_key(f):
-    # Decorator to require API key authentication. Checks for API key in headers (X-API-Key) or query parameters (api_key).
     @wraps(f)
     def decorated_function(*args, **kwargs):
         # Check for API key in headers or query parameters
@@ -29,48 +51,51 @@ def require_api_key(f):
         
         if not api_key or api_key not in API_KEYS:
             return jsonify({
-                'error': 'Valid API key required',
-                'message': 'Use X-API-Key header or api_key query parameter'
+                'error': 'Valid API key required'
             }), 401
         
         return f(*args, **kwargs)
     return decorated_function
 
-
+# Initialize Flask app
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here')  # Change in production
+app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here')
 
+# Configure upload settings from FileProcessor class
 app.config['UPLOAD_FOLDER'] = FileProcessor().upload_folder
 app.config['MAX_CONTENT_LENGTH'] = FileProcessor.MAX_FILE_SIZE
 
+# Session security settings
 app.config.update(
-    SESSION_COOKIE_SECURE=True,    # Required for SameSite=None
-    SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SAMESITE='None',  # Allow cross-site cookies
+    SESSION_COOKIE_SECURE=False,       # Should be True in production with HTTPS
+    SESSION_COOKIE_HTTPONLY=True,    # Prevent JavaScript access to cookies
+    SESSION_COOKIE_SAMESITE='Lax',         # CSRF protection
 )
 
+# Enable CORS for frontend communication
 CORS(app, 
      supports_credentials=True,
-     origins=["http://localhost:5173"],
+     origins=["http://localhost:5173"],  # Vite dev server default
      allow_headers=["Content-Type", "X-API-Key"],
      methods=["GET", "POST", "DELETE", "OPTIONS"])
 
-# In-memory session data as a fallback if Redis is unavailable
+# Fallback session storage if Redis fails
 session_data = {}
 
+# Initialize our main service classes
 file_processor = FileProcessor()
 text_analyser = TextAnalyser()
 
+# Decorator to ensure session exists for each request
 def ensure_session(f):
-    # Decorator to ensure each request has a valid session. Creates new session in Redis if it doesn't exist.
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        # Create session ID if it doesn't exist
         if 'session_id' not in session:
             session['session_id'] = str(uuid.uuid4())
         sid = session['session_id']
         
-        # Check if session exists in Redis, create if not
-        # This replaces the in-memory session_data dictionary
+        # Try to get session from Redis, create if not exists
         session_data_redis = redis_manager.get_session(sid)
         if not session_data_redis:
             session_data_redis = {
@@ -84,15 +109,15 @@ def ensure_session(f):
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
-    # Health check endpoint with system information
+    """Basic health check endpoint to verify API is running"""
     redis_status = "connected" if redis_manager.is_connected() else "disconnected"
     
     return jsonify({
         'status': 'healthy',
         'timestamp': datetime.datetime.now().isoformat(),
         'supported_formats': list(FileProcessor.ALLOWED_EXTENSIONS),
-        'max_file_size_kb': FileProcessor.MAX_FILE_SIZE / 1024,  # KB
-        'max_text_length': TextAnalyser.MAX_TEXT_LENGTH,  # Add text length info
+        'max_file_size_kb': FileProcessor.MAX_FILE_SIZE / 1024,
+        'max_text_length': TextAnalyser.MAX_TEXT_LENGTH,
         'redis_status': redis_status
     })
 
@@ -100,49 +125,30 @@ def health_check():
 @require_api_key
 @ensure_session
 def detect_ai():
-    # Main endpoint for AI detection - handles both text and file input
+    """Main endpoint for AI detection... accepts both file uploads and raw text"""
     try:
         text = None
         filename = None
         source_type = 'text'
         is_file_upload = False
         
-        # Check if it's a file upload 
+        # Handle file upload
         if 'file' in request.files:
             file = request.files['file']
             try:
                 text, filename = file_processor.process_file(file)
                 source_type = 'file'
-                is_file_upload = True  # Mark this as a file upload
+                is_file_upload = True
             except ValueError as e:
-                # Convert ValueError from file_processor to appropriate error type
-                error_msg = str(e).lower()
-                if 'security' in error_msg or 'malicious' in error_msg or 'signature' in error_msg:
-                    return jsonify({
-                        'error': 'File security validation failed',
-                        'message': str(e),
-                        'type': 'security error'
-                    }), 400
-                elif 'timeout' in error_msg or 'timed out' in error_msg:
-                    return jsonify({
-                        'error': 'File processing timed out',
-                        'message': str(e),
-                        'type': 'timeout error'
-                    }), 400
-                else:
-                    return jsonify({
-                        'error': 'File processing failed',
-                        'message': str(e),
-                        'type': 'processing error'
-                    }), 400
+                return jsonify({
+                    'error': str(e)
+                }), 400
             except Exception as e:
                 return jsonify({
-                    'error': 'File processing failed',
-                    'message': str(e),
-                    'type': 'processing error'
+                    'error': 'File processing failed'
                 }), 400
         
-        # Check if it's JSON text input 
+        # Handle JSON text input
         elif request.is_json:
             data = request.get_json()
             if not data or 'text' not in data:
@@ -152,7 +158,7 @@ def detect_ai():
             text = data['text'].strip()
             source_type = 'text'
         
-        # Check if it's form text input
+        # Handle form-encoded text input
         elif 'text' in request.form:
             text = request.form['text'].strip()
             source_type = 'text'
@@ -162,21 +168,19 @@ def detect_ai():
                 'error': 'Either upload a file or provide text input'
             }), 400
         
+        # Validate we actually got some text
         if not text:
             return jsonify({
                 'error': 'No text content found'
             }), 400
         
-        # Apply different validation rules for files vs text input
+        # Different validation for files vs direct text input
         if is_file_upload:
-            # For file uploads, use more lenient validation
             if len(text) < 10:
                 return jsonify({
                     'error': 'Extracted text must be at least 10 characters long'
                 }), 400
-            # No upper character limit for file uploads (already limited by file size)
         else:
-            # For direct text input, apply the original character limits
             if len(text) < 10:
                 return jsonify({
                     'error': 'Text must be at least 10 characters long'
@@ -187,14 +191,14 @@ def detect_ai():
                     'error': f'Text must be less than {text_analyser.MAX_TEXT_LENGTH:,} characters'
                 }), 400
 
-        # Check for force_single_analysis flag
+        # Check if user wants to force single analysis (ignore sentence splitting)
         force_single_analysis = False
         if request.is_json and request.get_json().get('force_single_analysis', False):
             force_single_analysis = True
         elif 'force_single_analysis' in request.form:
             force_single_analysis = True
         
-        # Analyze the text
+        # Perform the actual AI detection analysis
         try:
             analysis_result = text_analyser.analyse_text(
                 text, 
@@ -205,27 +209,25 @@ def detect_ai():
         except ValueError as e:
             return jsonify({'error': str(e)}), 400
         except Exception as e:
-            print("ANALYSIS ERROR TRACEBACK:")
-            print(traceback.format_exc())
             return jsonify({
-                'error': 'Text analysis failed',
-                'message': str(e)
+                'error': 'Text analysis failed'
             }), 500
 
-        # Store analysis in session data
+        # Generate unique ID for this analysis
         analysis_id = str(uuid.uuid4())
         
-        # Build session storage data
+        # Prepare session data for storage
         session_analysis = {
             'id': analysis_id,
-            'text_preview': 'text',
+            'text_preview': text,
             'timestamp': datetime.datetime.now(),
             'text_length': len(text),
             'source_type': source_type,
             'filename': filename,
-            **analysis_result['session_data']  # Merge in the analysis-specific data
+            **analysis_result['session_data']  # Merge analysis results
         }
 
+        # Debug output to help with development
         print(f"=== SESSION DEBUG ===")
         print(f"Session ID: {session['session_id']}")
         print(f"Analysis stored with ID: {analysis_id}")
@@ -236,13 +238,11 @@ def detect_ai():
                 print("No session data found in Redis")
                 print("=====================")
 
-        # Store analysis in Redis instead of in-memory session_data
+        # Store analysis in session (Redis preferred, fallback to memory)
         try:
-            # Primary storage: Redis
             if redis_manager and redis_manager.update_session_analyses(session['session_id'], session_analysis):
                 print(f"{analysis_result['analysis_type']} analysis stored in Redis")
             else:
-                # Fallback to in-memory storage if Redis fails
                 print("Redis storage failed, falling back to in-memory session storage")
                 if session['session_id'] not in session_data:
                     session_data[session['session_id']] = {'analyses': []}
@@ -250,13 +250,11 @@ def detect_ai():
                 print(f"{analysis_result['analysis_type']} analysis stored in session (fallback)")
                 
         except Exception as e:
-            print("SESSION APPEND ERROR:\n", traceback.format_exc())
             return jsonify({
-                'error': 'Failed to store analysis in session',
-                'message': 'Redis storage error'
+                'error': 'Failed to store analysis in session'
             }), 500
 
-        # Return the API response (already formatted by TextAnalyzer)
+        # Return success response with analysis results
         return jsonify({
             'success': True,
             'analysis_id': analysis_id,
@@ -270,25 +268,19 @@ def detect_ai():
             'error': str(e)
         }), 400
     except Exception as e:
-        print("MAIN ERROR TRACEBACK:")
-        print(traceback.format_exc())
         return jsonify({
-            'error': 'Internal server error',
-            'message': str(e)
+            'error': 'Internal server error'
         }), 500
-
-        
 
 @app.route('/api/history', methods=['GET'])
 @require_api_key
 @ensure_session
 def get_history():
-    # Get analysis history for current session
+    """Get analysis history for current session"""
     try:
         session_id = session['session_id']
         session_data_redis = redis_manager.get_session(session_id)
         
-        # Handle case where session doesn't exist in Redis (shouldn't happen with ensure_session)
         if not session_data_redis:
             return jsonify({
                 'success': True,
@@ -298,8 +290,7 @@ def get_history():
             })
         
         analyses = session_data_redis.get('analyses', [])
-        
-        # Return last 20 analyses to prevent large responses
+        # Return only recent analyses to avoid huge responses
         recent_analyses = analyses[-20:] if len(analyses) > 20 else analyses
         
         return jsonify({
@@ -310,18 +301,15 @@ def get_history():
         })
         
     except Exception as e:
-        print("HISTORY ERROR TRACEBACK:")
-        print(traceback.format_exc())
         return jsonify({
-            'error': 'Internal server error',
-            'message': str(e)
+            'error': 'Internal server error'
         }), 500
 
 @app.route('/api/analysis/<analysis_id>', methods=['GET'])
 @require_api_key
 @ensure_session
 def get_analysis(analysis_id):
-    # Get specific analysis by ID
+    """Get specific analysis by ID"""
     try:
         session_id = session['session_id']
         session_data_redis = redis_manager.get_session(session_id)
@@ -332,6 +320,7 @@ def get_analysis(analysis_id):
             }), 404
         
         analyses = session_data_redis.get('analyses', [])
+        # Find the specific analysis by ID
         analysis = next((a for a in analyses if a['id'] == analysis_id), None)
         
         if not analysis:
@@ -345,18 +334,15 @@ def get_analysis(analysis_id):
         })
         
     except Exception as e:
-        print("GET ANALYSIS ERROR TRACEBACK:")
-        print(traceback.format_exc())
         return jsonify({
-            'error': 'Internal server error',
-            'message': str(e)
+            'error': 'Internal server error'
         }), 500
 
 @app.route('/api/session', methods=['GET'])
 @require_api_key
 @ensure_session
 def get_session_info():
-    # Get current session information
+    """Get basic session information"""
     try:
         session_id = session['session_id']
         session_data_redis = redis_manager.get_session(session_id)
@@ -374,18 +360,15 @@ def get_session_info():
         })
         
     except Exception as e:
-        print("SESSION INFO ERROR TRACEBACK:")
-        print(traceback.format_exc())
         return jsonify({
-            'error': 'Internal server error',
-            'message': str(e)
+            'error': 'Internal server error'
         }), 500
 
 @app.route('/api/clear-history', methods=['DELETE'])
 @require_api_key
 @ensure_session
 def clear_history():
-    # Clear analysis history for current session
+    """Clear all analysis history for current session"""
     try:
         session_id = session['session_id']
         if not redis_manager.clear_session_analyses(session_id):
@@ -399,34 +382,15 @@ def clear_history():
         })
         
     except Exception as e:
-        print("CLEAR HISTORY ERROR TRACEBACK:")
-        print(traceback.format_exc())
         return jsonify({
-            'error': 'Internal server error',
-            'message': str(e)
+            'error': 'Internal server error'
         }), 500
         
-@app.errorhandler(SecurityError)
-def security_error(error):
-    return jsonify({
-        'error': 'Security validation failed',
-        'message': str(error),
-        'type': 'security_error'
-    }), 400
-
-@app.errorhandler(ProcessingTimeoutError)
-def timeout_error(error):
-    return jsonify({
-        'error': 'Processing timeout',
-        'message': str(error),
-        'type': 'timeout_error'
-    }), 400
-    
+# Error handlers for common HTTP errors
 @app.errorhandler(413)
 def too_large(e):
     return jsonify({
-        'error': 'File too large',
-        'max_size_mb': FileProcessor.MAX_FILE_SIZE / (1024 * 1024)
+        'error': 'File too large'
     }), 413
 
 @app.errorhandler(404)

@@ -33,7 +33,7 @@ def test_case(name, condition, error_msg=None):
                 print(f"  Error: {error_msg}")
             return False
     except Exception as e:
-        print(f"FAILED {name} - Exception: {e}")
+        print(f"FAILED {name} ...Exception: {e}")
         return False
 
 try:
@@ -162,7 +162,7 @@ try:
         return False
     test_case("Verify history clearance", test_verify_cleared_history)
 
-    # Test 13: Very long text (should fail) - Adjust based on your actual MAX_TEXT_LENGTH
+    # Test 13: Very long text (should fail)... Adjust based on your actual MAX_TEXT_LENGTH
     def test_very_long_text():
         # Try different lengths to find the actual limit
         test_lengths = [5000, 10000, 20000, 50000]
