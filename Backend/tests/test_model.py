@@ -279,7 +279,7 @@ if __name__ == "__main__":
             break
     
     if not model_path:
-        print("❌ Model directory not found!")
+        print("Model directory not found!")
         print("Searched in the following locations:")
         for path in possible_paths:
             print(f"  : {path.absolute()}")
