@@ -57,15 +57,6 @@ To clone the repository, use the following command:
 git clone https://gitlab.cs.uct.ac.za/capstone25/aicd.git
 ```
 
-### Environment Variables
-
-Set the following environment variables:
-
-```bash
-export API_KEY="your-api-key-here"
-export SECRET_KEY="your-secret-key-here"
-export REDIS_URL="redis://localhost:6379/0"  # Optional, defaults to localhost
-```
 
 ### Starting the Server
 
