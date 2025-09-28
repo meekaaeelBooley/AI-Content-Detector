@@ -5,3 +5,4 @@ Backend/venv
 *.txt
 Backend/install_dependencies.sh
 Backend/docs/
+frontend/node_modules/
