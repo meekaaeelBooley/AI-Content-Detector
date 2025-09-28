@@ -92,12 +92,9 @@ sudo systemctl start redis-server
 brew install redis
 brew services start redis
 
-# Windows (WSL recommended)
-wsl -e bash -c "sudo apt install -y redis-server && sudo systemctl start redis-server"
-```
 
 4. **Download the AI model:**
-Place the pre-trained model files in `ai_detector_model/` directory at the project root.
+Place the pre-trained model files in `ai_detector_model/` directory at the project Backend root.
 
 ## Running the Application
 
@@ -112,7 +109,7 @@ Place the pre-trained model files in `ai_detector_model/` directory at the proje
 source venv/bin/activate  # Windows: venv\Scripts\activate
 
 # Start Redis (if not running)
-redis-server  # Or: sudo systemctl start redis-server
+redis-server  # Or on Ubuntu: sudo systemctl start redis-server
 
 # Run the application
 python run.py
