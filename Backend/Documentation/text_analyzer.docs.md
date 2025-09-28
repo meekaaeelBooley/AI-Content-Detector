@@ -58,10 +58,16 @@ Aggregate: Overall 63% AI, 37% Human, Medium Confidence
 ### Text Validation
 ```python
 def validate_input_length(self, text, max_length=None):
-    if len(text) < 10:
-        raise ValueError('Text must be at least 10 characters long')
-    if len(text) > max_length:
-        raise ValueError(f'Text exceeds maximum length of {max_length} characters')
+    word_count = len(text.split())
+    if word_count < 10:
+        return jsonify({
+            'error': 'Text must be at least 10 words long'
+        }), 400
+
+    if len(text) > text_analyser.MAX_TEXT_LENGTH:
+        return jsonify({
+            'error': f'Text must be less than {text_analyser.MAX_TEXT_LENGTH:,} characters'
+        }), 400
 ```
 
 ### Intelligent Sentence Splitting
@@ -290,7 +296,7 @@ result = text_analyser.analyse_text(text, source_type='file', filename=filename)
 ### Input Validation Errors
 ```python
 # Too short
-raise ValueError('Text must be at least 10 characters long')
+raise ValueError('Text must be at least 10 words long')
 
 # Too long  
 raise ValueError(f'Text exceeds maximum length of {max_length} characters')

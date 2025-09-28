@@ -69,8 +69,9 @@ class TextAnalyser:
         # Basic validation to ensure text is within reasonable limits
         if max_length is None:
             max_length = self.MAX_TEXT_LENGTH
-        if len(text) < 10:
-            raise ValueError('Text must be at least 10 characters long')
+        word_count = len(text.split())
+        if word_count < 10:
+            raise ValueError('Text must be at least 10 words long')
         if len(text) > max_length:
             raise ValueError(f'Text exceeds maximum length of {max_length} characters')
     

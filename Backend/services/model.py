@@ -39,7 +39,7 @@ class AIDetectionModel:
         
         # This path is for when the model is located on our machines.
         # Updated path to reflect new structure
-        self.model_path = "../ai_detector_model"  # Model files are in a folder at project root
+        self.model_path = "./ai_detector_model"  # Model files are in a folder at project root
         
         # Load the tokenizer (converts text to numbers the model understands)
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_path)

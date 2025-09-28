@@ -181,9 +181,10 @@ def detect_ai():
                     'error': 'Extracted text must be at least 10 characters long'
                 }), 400
         else:
-            if len(text) < 10:
+            word_count = len(text.split())
+            if word_count < 10:
                 return jsonify({
-                    'error': 'Text must be at least 10 characters long'
+                    'error': 'Text must be at least 10 words long'
                 }), 400
 
             if len(text) > text_analyser.MAX_TEXT_LENGTH:

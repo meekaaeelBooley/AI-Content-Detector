@@ -116,7 +116,7 @@ def session_function():
 #### Error Response
 ```json
 {
-    "error": "Text must be at least 10 characters long"
+    "error": "Text must be at least 10 words long"
 }
 ```
 
