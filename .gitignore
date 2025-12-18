@@ -4,5 +4,8 @@ Backend/ai_detector_model/
 Backend/venv
 *.txt
 Backend/install_dependencies.sh
-Backend/docs/
+Backend/Documentation/
+frontend/Documentation/
+
 frontend/node_modules/
+*.env
