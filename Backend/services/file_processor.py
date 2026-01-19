@@ -1,8 +1,7 @@
 """
 CSC3003S Capstone Project - AI Content Detector
 Year: 2025
-Authors: Team 'JackBoys'
-Members: Zubair Elliot(ELLZUB001), Mubashir Dawood(DWDMUB001), Meekaaeel Booley(BLYMEE001)
+Authors: Meekaaeel Booley(BLYMEE001), Mubashir Dawood(DWDMUB001)
 
 This file handles all the file upload processing.
 It can read PDF, DOCX, and TXT files and extract the text content.

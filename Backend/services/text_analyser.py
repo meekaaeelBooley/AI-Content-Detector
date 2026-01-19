@@ -1,8 +1,7 @@
 """
 CSC3003S Capstone Project - AI Content Detector
 Year: 2025
-Authors: Team 'JackBoys'
-Members: Zubair Elliot(ELLZUB001), Mubashir Dawood(DWDMUB001), Meekaaeel Booley(BLYMEE001)
+Authors: Meekaaeel Booley(BLYMEE001), Mubashir Dawood(DWDMUB001)
 
 This file is the main analysis engine. It coordinates text processing and AI detection
 It decides whether to analyze text as a whole or split into sentences for better accuracy

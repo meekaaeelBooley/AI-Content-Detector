@@ -1,8 +1,7 @@
 """
 CSC3003S Capstone Project - AI Content Detector
 Year: 2025
-Authors: Team 'JackBoys'
-Members: Zubair Elliot(ELLZUB001), Mubashir Dawood(DWDMUB001), Meekaaeel Booley(BLYMEE001)
+Authors: Meekaaeel Booley(BLYMEE001), Mubashir Dawood(DWDMUB001)
 
 This program uses our AI detection model. The brain of our application.
 It uses a pre-trained transformer model (now Electra) to detect if text was written by AI or humans

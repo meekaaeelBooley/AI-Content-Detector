@@ -2,7 +2,7 @@
 
 **CSC3003S Capstone Project - 2025**  
 **Team: JackBoys**  
-**Members:** Zubair Elliot (ELLZUB001), Mubashir Dawood (DWDMUB001), Meekaaeel Booley (BLYMEE001)
+**Authors:** Meekaaeel Booley (BLYMEE001), Mubashir Dawood (DWDMUB001)
 
 A Flask-based REST API that uses machine learning to detect AI-generated vs human-written text. The system provides both single-text analysis and intelligent sentence-level analysis for longer documents.
 
