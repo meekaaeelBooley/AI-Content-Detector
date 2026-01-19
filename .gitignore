@@ -6,7 +6,7 @@ Backend/venv
 Backend/install_dependencies.sh
 Backend/Documentation/
 frontend/Documentation/
-
+frontend/dist
 frontend/node_modules/
 *.env
 api.caller.js
