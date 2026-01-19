@@ -9,3 +9,4 @@ frontend/Documentation/
 
 frontend/node_modules/
 *.env
+api.caller.js
