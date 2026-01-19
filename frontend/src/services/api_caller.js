@@ -1,8 +1,6 @@
 // CSC3003S Capstone Project - AI Content Detector
 // Year: 2025
-// Authors: Team 'JackBoys'
-// Members: Zubair Elliot(ELLZUB001), Mubashir Dawood(DWDMUB001), Meekaaeel Booley(BLYMEE001)
-
+// Author: Meekaaeel Booley
 
 import axios from 'axios';
 
@@ -10,8 +8,32 @@ import axios from 'axios';
 
 // For development with local backend, use:
 const API_BASE_URL = 'http://127.0.0.1:5000/api';
-
 const API_KEY = import.meta.env.REACT_APP_API_KEY || 'jackboys25';
+
+// Storage key for session ID
+const SESSION_STORAGE_KEY = 'aicd_session_id';
+
+// Function to get stored session ID
+const getStoredSessionId = () => {
+  // Try localStorage first, then sessionStorage
+  return localStorage.getItem(SESSION_STORAGE_KEY) || 
+         sessionStorage.getItem(SESSION_STORAGE_KEY);
+};
+
+// Function to store session ID
+const storeSessionId = (sessionId) => {
+  // Store in both localStorage and sessionStorage for reliability
+  localStorage.setItem(SESSION_STORAGE_KEY, sessionId);
+  sessionStorage.setItem(SESSION_STORAGE_KEY, sessionId);
+  console.log('Stored session ID:', sessionId);
+};
+
+// Function to clear session ID
+const clearStoredSessionId = () => {
+  localStorage.removeItem(SESSION_STORAGE_KEY);
+  sessionStorage.removeItem(SESSION_STORAGE_KEY);
+  console.log('Cleared stored session ID');
+};
 
 // axios instance with default config
 const apiClient = axios.create({
@@ -21,40 +43,62 @@ const apiClient = axios.create({
     'Content-Type': 'application/json',
     'X-API-Key': API_KEY
   },
-  withCredentials: true,  // This is crucial for session cookies
+  withCredentials: true,
   crossDomain: true
 });
 
-// Simple request logger
+// Request interceptor - ADD SESSION ID TO HEADERS
 apiClient.interceptors.request.use(function(config) {
   console.log('Making request to:', config.url);
+  
+  // Get stored session ID and add to headers if it exists
+  const sessionId = getStoredSessionId();
+  if (sessionId) {
+    config.headers['X-Session-ID'] = sessionId;
+    console.log('Added X-Session-ID header:', sessionId);
+  } else {
+    console.log('No session ID stored, will create new session');
+  }
+  
   console.log('Request headers:', config.headers);
-  console.log('withCredentials:', config.withCredentials);
-  // Ensure withCredentials is always true
-  config.withCredentials = true;
   return config;
 }, function(error) {
   console.log('Request error:', error);
   return Promise.reject(error);
 });
 
-// Simple response logger
+// Response interceptor - EXTRACT AND STORE SESSION ID FROM RESPONSES
 apiClient.interceptors.response.use(function(response) {
   console.log('Got response:', response.status);
-  console.log('Response headers:', response.headers);
-  // Log session ID if present in response
+  
+  // Check if response has a session ID and store it
   if (response.data && response.data.session_id) {
-    console.log('Session ID from response:', response.data.session_id);
+    const newSessionId = response.data.session_id;
+    console.log('Session ID from response:', newSessionId);
+    
+    // Store the session ID
+    storeSessionId(newSessionId);
+    
+    // Also update the axios default headers for future requests
+    apiClient.defaults.headers.common['X-Session-ID'] = newSessionId;
   }
+  
   // Log any cookies from response
   if (response.headers['set-cookie']) {
     console.log('Set-Cookie headers:', response.headers['set-cookie']);
   }
+  
   return response;
 }, function(error) {
   console.log('Response error:', error);
   if (error.response) {
     console.log('Error response headers:', error.response.headers);
+    
+    // If it's a session-related error, clear stored session
+    if (error.response.status === 404 && error.response.data.error === 'Session not found') {
+      console.log('Clearing invalid session ID');
+      clearStoredSessionId();
+    }
   }
   return Promise.reject(error);
 });
@@ -91,12 +135,18 @@ export const apiService = {
       formData.append('force_single_analysis', 'true');
     }
     
-    return apiClient.post('/detect', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-        'X-API-Key': API_KEY
-      }
-    });
+    // For file uploads, we need to manually set the session header
+    const sessionId = getStoredSessionId();
+    const headers = {
+      'Content-Type': 'multipart/form-data',
+      'X-API-Key': API_KEY
+    };
+    
+    if (sessionId) {
+      headers['X-Session-ID'] = sessionId;
+    }
+    
+    return apiClient.post('/detect', formData, { headers });
   },
   
   // Get history
@@ -118,6 +168,18 @@ export const apiService = {
   clearHistory: function() {
     return apiClient.delete('/clear-history');
   },
+  
+  // Get current session ID (for debugging)
+  getCurrentSessionId: function() {
+    return getStoredSessionId();
+  },
+  
+  // Clear session (for logout or testing)
+  clearSession: function() {
+    clearStoredSessionId();
+    delete apiClient.defaults.headers.common['X-Session-ID'];
+    return Promise.resolve();
+  }
 };
 
 // error handler
