@@ -9,7 +9,7 @@
 /* Header at the top */
 .homepage .homepage-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   padding: 1rem 5rem; /* Space inside: top/bottom, left/right */
 }
