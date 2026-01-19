@@ -4,7 +4,7 @@ This project is the frontend for the AI Content Detector (AI-CD) application. It
 
 **CSC3003S Capstone Project - 2025**  
 **Team: JackBoys**  
-**Members:** Zubair Elliot (ELLZUB001), Mubashir Dawood (DWDMUB001), Meekaaeel Booley (BLYMEE001)
+**Author:** Meekaaeel Booley
 
 
 ## Table of Contents

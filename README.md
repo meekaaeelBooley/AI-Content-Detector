@@ -6,44 +6,22 @@ The AI Content Detector (AI-CD) is a web application designed to help users dete
 
 **CSC3003S Capstone Project - 2025**  
 **Team: JackBoys**  
-**Members:** Zubair Elliot (ELLZUB001), Mubashir Dawood (DWDMUB001), Meekaaeel Booley (BLYMEE001)
-
+**Members:** Meekaaeel Booley (BLYMEE001), Zubair Elliot (ELLZUB001), Mubashir Dawood (DWDMUB001)
+![alt text](image.png)
 ## Project Overview
-
-The AI Content Detector application is divided into two main parts:
 
 1. **Backend**: A Flask API that provides AI content detection capabilities, supporting both text input and file uploads (PDF, DOCX, TXT). The API uses Redis for session management and requires API key authentication.
 2. **Frontend**: A React application built with Vite, providing a user-friendly interface for interacting with the AI detection service.
+3. **Model Trainer**: Where the Huggingface ELECTRA Transformer has been trained from.
 
 ## Backend Setup
 
 ### Prerequisites
 
 - Python 3.8 or higher
-- Redis server running (for session management)
-- Required Python packages (Flask, Redis, etc.)
-
-## Version Control
-
-### Initializing the Repository
-
-To initialize a new Git repository and set up the remote origin, use the following commands:
-
-```bash
-git init
-git remote add origin https://gitlab.cs.uct.ac.za/capstone25/aicd.git
-```
-
-### Cloning the Repository
-
-To clone the repository, use the following command:
-
-```bash
-git clone https://gitlab.cs.uct.ac.za/capstone25/aicd.git
-```
+- Required Python packages (Flask, etc.)
 
 
-The server will start on `http://0.0.0.0:5000` by default.
 
 ## Frontend Setup
 
@@ -86,8 +64,8 @@ npm run storybook
 
 1. Run/Start
 ```powershell
-# Run the automated start script
-.\start.ps1
+# Run the start script
+python run.py
 ```
 
 ## Usage
@@ -114,15 +92,6 @@ For backend development, refer to the [Backend README](backend/README.md).
 
 For frontend development, refer to the [Frontend README](frontend/README.md).
 
-## Testing
-
-### Backend
-
-For backend testing, refer to the [Backend README](backend/README.md).
-
-### Frontend
-
-For frontend testing, refer to the [Frontend README](frontend/README.md).
 
 ## Deployment
 
